@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "github.com/brotherlogic/godiscogs/godiscogs.proto";
+
+message Empty {}
+
+message ReleaseList {
+        repeated Release releases = 1;
+}
+
+service DiscogsService {
+        rpc GetCollection (Empty) returns (ReleaseList) {};
+}
+
