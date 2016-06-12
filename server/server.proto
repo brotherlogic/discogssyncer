@@ -4,6 +4,10 @@ import "github.com/brotherlogic/godiscogs/godiscogs.proto";
 
 message Empty {}
 
+message FolderList {
+        repeated Folder folders = 1;
+}
+
 message ReleaseList {
         repeated Release releases = 1;
 }

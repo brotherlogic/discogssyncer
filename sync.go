@@ -45,6 +45,23 @@ func (syncer *Syncer) SaveCollection(retr *godiscogs.DiscogsRetriever) {
 	}
 }
 
+// SaveFolders saves out the list of folders
+func (syncer *Syncer) SaveFolders(folders []*pbd.Folder) {
+	list := pb.FolderList{}
+	list.Folders = append(list.Folders, folders...)
+
+	savePath := syncer.saveLocation + "metadata/"
+	if _, err := os.Stat(savePath); os.IsNotExist(err) {
+		os.MkdirAll(savePath, 0777)
+	}
+
+	data, err := proto.Marshal(&list)
+	if err != nil {
+		log.Fatal("Marshalling error: %v", err)
+	}
+	ioutil.WriteFile(savePath+"folders", data, 0644)
+}
+
 // GetCollection serves up the whole of the collection
 func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.ReleaseList, error) {
 	releases := &pb.ReleaseList{}
