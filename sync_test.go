@@ -10,10 +10,10 @@ import pb "github.com/brotherlogic/discogssyncer/server"
 func TestSaveLocation(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testfolder/"}
 	release := &pbd.Release{Id: 1234}
-	syncer.saveRelease(release)
+	syncer.saveRelease(release, 12)
 
 	//Check that the file is in the right location
-	if _, err := os.Stat(".testfolder/1234.release"); os.IsNotExist(err) {
+	if _, err := os.Stat(".testfolder/12/1234.release"); os.IsNotExist(err) {
 		t.Errorf("File does not exists")
 	}
 }
