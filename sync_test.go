@@ -2,8 +2,6 @@ package main
 
 import "golang.org/x/net/context"
 import "google.golang.org/grpc"
-import "log"
-import "net"
 import "os"
 import "testing"
 import pbd "github.com/brotherlogic/godiscogs"
@@ -30,16 +28,8 @@ func GetTestSyncer() Syncer {
 }
 
 func RunServer() {
-	go func() {
-		syncer := GetTestSyncer()
-		lis, err := net.Listen("tcp", ":"+syncer.port)
-		if err != nil {
-			log.Fatal("Failed to bring up server: %v", err)
-		}
-		s := grpc.NewServer()
-		pb.RegisterDiscogsServiceServer(s, &syncer)
-		s.Serve(lis)
-	}()
+	syncer := GetTestSyncer()
+	syncer.Serve()
 }
 
 func TestServer(t *testing.T) {

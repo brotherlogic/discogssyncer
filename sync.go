@@ -5,10 +5,12 @@ import "github.com/brotherlogic/godiscogs"
 import "github.com/golang/protobuf/proto"
 import "io/ioutil"
 import "log"
+import "net"
 import "os"
 import "strconv"
 import "strings"
 
+import "google.golang.org/grpc"
 import "golang.org/x/net/context"
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
@@ -63,13 +65,33 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 	return releases, nil
 }
 
+//Serve runs up the server
+func (syncer *Syncer) Serve() {
+	go func() {
+		lis, err := net.Listen("tcp", ":"+syncer.port)
+		if err != nil {
+			log.Fatal("Unable to serve on port %v", err)
+		}
+
+		s := grpc.NewServer()
+		pb.RegisterDiscogsServiceServer(s, syncer)
+		s.Serve(lis)
+	}()
+
+}
+
 func main() {
 	var folder = flag.String("folder", "/home/simon/.discogs", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
+	var port = flag.String("port", "", "Serving port")
 	flag.Parse()
 
-	syncer := Syncer{token: *token, saveLocation: *folder}
+	syncer := Syncer{token: *token, saveLocation: *folder, port: *port}
 
-	retr := godiscogs.NewDiscogsRetriever(*token)
-	syncer.SaveCollection(retr)
+	if *port == "" {
+		retr := godiscogs.NewDiscogsRetriever(*token)
+		syncer.SaveCollection(retr)
+	} else {
+		syncer.Serve()
+	}
 }
