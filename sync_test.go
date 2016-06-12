@@ -27,6 +27,26 @@ func GetTestSyncer(foldername string) Syncer {
 	return syncer
 }
 
+func TestGetFolders(t *testing.T) {
+	syncer := GetTestSyncer(".testgetfolders/")
+	var folders []*pbd.Folder
+	folders = append(folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	syncer.SaveFolders(folders)
+
+	release := &pbd.Release{Id: 1234}
+	syncer.saveRelease(release, 1234)
+
+	releases, err := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestOne"})
+
+	if err != nil {
+		t.Errorf("Error retrieveing releases: %v", err)
+	}
+
+	if len(releases.Releases) == 0 {
+		t.Errorf("GetReleasesInFolder came back empty")
+	}
+}
+
 func RunServer() {
 	syncer := GetTestSyncer(".testfolder/")
 	syncer.Serve()
