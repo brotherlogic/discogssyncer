@@ -23,43 +23,50 @@ type Syncer struct {
 	port         string
 }
 
-func (syncer *Syncer) saveRelease(rel *godiscogs.Release) {
+func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 	//Check that the save folder exists
-	if _, err := os.Stat(syncer.saveLocation); os.IsNotExist(err) {
-		os.Mkdir(syncer.saveLocation, 0777)
+	savePath := syncer.saveLocation + strconv.Itoa(folder) + "/"
+	if _, err := os.Stat(savePath); os.IsNotExist(err) {
+		os.MkdirAll(savePath, 0777)
 	}
 
 	data, err := proto.Marshal(rel)
 	if err != nil {
 		log.Fatal("marshaling error: ", err)
 	}
-	ioutil.WriteFile(syncer.saveLocation+strconv.Itoa(int(rel.Id))+".release", data, 0644)
+	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
 }
 
 // SaveCollection writes out the full collection to files.
 func (syncer *Syncer) SaveCollection(retr *godiscogs.DiscogsRetriever) {
 	releases := retr.GetCollection()
 	for _, release := range releases {
-		syncer.saveRelease(&release)
+		syncer.saveRelease(&release, int(release.FolderId))
 	}
 }
 
 // GetCollection serves up the whole of the collection
 func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.ReleaseList, error) {
 	releases := &pb.ReleaseList{}
-	files, _ := ioutil.ReadDir(syncer.saveLocation)
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".release") {
-			data, err1 := ioutil.ReadFile(syncer.saveLocation + "/" + file.Name())
-			if err1 != nil {
-				log.Printf("Error reading file: %v", err1)
+	bfiles, _ := ioutil.ReadDir(syncer.saveLocation)
+	for _, bfile := range bfiles {
+		if bfile.IsDir() {
+			log.Printf("Searching %v", bfile)
+			files, _ := ioutil.ReadDir(syncer.saveLocation + bfile.Name())
+			for _, file := range files {
+				if strings.HasSuffix(file.Name(), ".release") {
+					data, err1 := ioutil.ReadFile(syncer.saveLocation + "/" + bfile.Name() + "/" + file.Name())
+					if err1 != nil {
+						log.Printf("Error reading file: %v", err1)
+					}
+					release := &pbd.Release{}
+					err2 := proto.Unmarshal(data, release)
+					if err2 != nil {
+						log.Printf("Error unmarshalling data: %v", err2)
+					}
+					releases.Releases = append(releases.Releases, release)
+				}
 			}
-			release := &pbd.Release{}
-			err2 := proto.Unmarshal(data, release)
-			if err2 != nil {
-				log.Printf("Error unmarshalling data: %v", err2)
-			}
-			releases.Releases = append(releases.Releases, release)
 		}
 	}
 	return releases, nil
