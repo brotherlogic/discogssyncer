@@ -18,9 +18,9 @@ func TestSaveLocation(t *testing.T) {
 	}
 }
 
-func GetTestSyncer() Syncer {
+func GetTestSyncer(foldername string) Syncer {
 	syncer := Syncer{
-		saveLocation: ".testfolder/",
+		saveLocation: foldername,
 		host:         "localhost",
 		port:         "12345",
 	}
@@ -28,7 +28,7 @@ func GetTestSyncer() Syncer {
 }
 
 func RunServer() {
-	syncer := GetTestSyncer()
+	syncer := GetTestSyncer(".testfolder/")
 	syncer.Serve()
 }
 
@@ -47,5 +47,18 @@ func TestServer(t *testing.T) {
 	}
 	if len(r.Releases) == 0 {
 		t.Errorf("Collection has come back empty")
+	}
+}
+
+func TestSaveFolderMetaata(t *testing.T) {
+	syncer := GetTestSyncer(".testSaveFolderMetadata/")
+	var folders []*pbd.Folder
+	folders = append(folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	folders = append(folders, &pbd.Folder{Name: "TestTwo", Id: 1232})
+
+	syncer.SaveFolders(folders)
+
+	if _, err := os.Stat(".testSaveFolderMetadata/metadata/folders"); os.IsNotExist(err) {
+		t.Errorf("Folder metedata has not been save")
 	}
 }
