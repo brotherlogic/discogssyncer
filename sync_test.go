@@ -10,25 +10,45 @@ import pb "github.com/brotherlogic/discogssyncer/server"
 func TestSaveLocation(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testfolder/"}
 	release := &pbd.Release{Id: 1234}
-	syncer.saveRelease(release)
+	syncer.saveRelease(release, 12)
 
 	//Check that the file is in the right location
-	if _, err := os.Stat(".testfolder/1234.release"); os.IsNotExist(err) {
+	if _, err := os.Stat(".testfolder/12/1234.release"); os.IsNotExist(err) {
 		t.Errorf("File does not exists")
 	}
 }
 
-func GetTestSyncer() Syncer {
+func GetTestSyncer(foldername string) Syncer {
 	syncer := Syncer{
-		saveLocation: ".testfolder/",
+		saveLocation: foldername,
 		host:         "localhost",
 		port:         "12345",
 	}
 	return syncer
 }
 
+func TestGetFolders(t *testing.T) {
+	syncer := GetTestSyncer(".testgetfolders/")
+	var folders []*pbd.Folder
+	folders = append(folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	syncer.SaveFolders(folders)
+
+	release := &pbd.Release{Id: 1234}
+	syncer.saveRelease(release, 1234)
+
+	releases, err := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestOne"})
+
+	if err != nil {
+		t.Errorf("Error retrieveing releases: %v", err)
+	}
+
+	if len(releases.Releases) == 0 {
+		t.Errorf("GetReleasesInFolder came back empty")
+	}
+}
+
 func RunServer() {
-	syncer := GetTestSyncer()
+	syncer := GetTestSyncer(".testfolder/")
 	syncer.Serve()
 }
 
@@ -47,5 +67,18 @@ func TestServer(t *testing.T) {
 	}
 	if len(r.Releases) == 0 {
 		t.Errorf("Collection has come back empty")
+	}
+}
+
+func TestSaveFolderMetaata(t *testing.T) {
+	syncer := GetTestSyncer(".testSaveFolderMetadata/")
+	var folders []*pbd.Folder
+	folders = append(folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	folders = append(folders, &pbd.Folder{Name: "TestTwo", Id: 1232})
+
+	syncer.SaveFolders(folders)
+
+	if _, err := os.Stat(".testSaveFolderMetadata/metadata/folders"); os.IsNotExist(err) {
+		t.Errorf("Folder metedata has not been save")
 	}
 }
