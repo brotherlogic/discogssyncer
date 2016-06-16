@@ -128,17 +128,14 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 
 //Serve runs up the server
 func (syncer *Syncer) Serve() {
-	go func() {
-		lis, err := net.Listen("tcp", ":"+syncer.port)
-		if err != nil {
-			log.Fatal("Unable to serve on port %v", err)
-		}
+	lis, err := net.Listen("tcp", ":"+syncer.port)
+	if err != nil {
+		log.Fatal("Unable to serve on port %v", err)
+	}
 
-		s := grpc.NewServer()
-		pb.RegisterDiscogsServiceServer(s, syncer)
-		s.Serve(lis)
-	}()
-
+	s := grpc.NewServer()
+	pb.RegisterDiscogsServiceServer(s, syncer)
+	s.Serve(lis)
 }
 
 func main() {

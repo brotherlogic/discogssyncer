@@ -24,4 +24,4 @@ size_2 = os.path.getsize('./sync')
 if size_1 != size_2:
     for line in os.popen('killall sync').readlines():
         pass
-    subprocess.Popen('./cardserver')
+    subprocess.Popen('./cardserver --port 50051')
