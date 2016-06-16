@@ -23,5 +23,4 @@ size_2 = os.path.getsize('./discogssyncer')
 if size_1 != size_2:
     for line in os.popen('killall discogssyncer').readlines():
         pass
-    subprocess.Popen('./cardserver --port 50051')
-
+    subprocess.Popen('./discogssyncer --port 50051')
