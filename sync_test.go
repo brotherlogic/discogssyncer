@@ -48,8 +48,10 @@ func TestGetFolders(t *testing.T) {
 }
 
 func RunServer() {
-	syncer := GetTestSyncer(".testfolder/")
-	syncer.Serve()
+	go func() {
+		syncer := GetTestSyncer(".testfolder/")
+		syncer.Serve()
+	}()
 }
 
 func TestServer(t *testing.T) {
