@@ -67,11 +67,12 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 		syncer.saveRelease(&release, int(release.FolderId))
 	}
 	folders := retr.GetFolders()
-	folderList := &pb.FolderList{}
-	for _, folder := range folders {
+	folderList := pb.FolderList{}
+	for i := range folders {
+		folder := folders[i]
 		folderList.Folders = append(folderList.Folders, &folder)
 	}
-	syncer.SaveFolders(folderList)
+	syncer.SaveFolders(&folderList)
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
