@@ -6,11 +6,13 @@ import "golang.org/x/net/context"
 import "google.golang.org/grpc"
 import "log"
 import "math/rand"
+import "time"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
 
 func getRelease(folderName string, host string, port string) *pbd.Release {
+	rand.Seed(time.Now().UTC().UnixNano())
 	conn, err := grpc.Dial(host+":"+port, grpc.WithInsecure())
 	defer conn.Close()
 	client := pb.NewDiscogsServiceClient(conn)
@@ -21,6 +23,7 @@ func getRelease(folderName string, host string, port string) *pbd.Release {
 		log.Fatal("Problem getting releases %v", err)
 	}
 
+	log.Printf("RELEASES = %v from %v", rand.Intn(len(r.Releases)), len(r.Releases))
 	return r.Releases[rand.Intn(len(r.Releases))]
 }
 
@@ -31,5 +34,6 @@ func main() {
 	flag.Parse()
 
 	rel := getRelease(*folder, *host, *port)
+	log.Printf("HERE %v", rel)
 	fmt.Printf(pbd.GetReleaseArtist(*rel) + " - " + rel.Title)
 }
