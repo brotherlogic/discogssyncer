@@ -10,6 +10,7 @@ import "net"
 import "os"
 import "strconv"
 import "strings"
+import "time"
 
 import "google.golang.org/grpc"
 import "golang.org/x/net/context"
@@ -24,6 +25,34 @@ type Syncer struct {
 	port         string
 }
 
+// GetRelease Gets the release and metadata
+func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
+     releaseData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
+     metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".metadata")
+     release := &pbd.Release{}
+     metadata := &pb.ReleaseMetadata{}
+
+     proto.Unmarshal(releaseData, release)
+     proto.Unmarshal(metadataData, metadata)
+     return release, metadata
+}
+
+func (syncer *Syncer) saveMetadata(rel *godiscogs.Release, folder int) {
+     metadataPath := syncer.saveLocation + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".metadata"
+
+     metadata := &pb.ReleaseMetadata{}  
+     if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+	metadata.DateAdded = time.Now().Unix()
+	metadata.DateRefreshed = time.Now().Unix()
+     } else {
+          data, _ := ioutil.ReadFile(metadataPath)
+	  proto.Unmarshal(data,metadata)
+	  metadata.DateRefreshed = time.Now().Unix()
+     }
+     data, _ := proto.Marshal(metadata)
+     ioutil.WriteFile(metadataPath, data, 0644)
+}
+
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 	//Check that the save folder exists
 	savePath := syncer.saveLocation + strconv.Itoa(folder) + "/"
@@ -36,6 +65,8 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 		log.Fatal("marshaling error: ", err)
 	}
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
+
+	syncer.saveMetadata(rel, folder)
 }
 
 // SaveCollection writes out the full collection to files.
