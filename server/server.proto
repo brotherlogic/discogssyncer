@@ -2,6 +2,14 @@ syntax = "proto3";
 
 import "github.com/brotherlogic/godiscogs/godiscogs.proto";
 
+message ReleaseMetadata {
+	// The date the release was added
+	int64 date_added = 1;
+
+	// The date the release was last refreshed
+	int64 date_refreshed = 2;
+}
+
 message Empty {}
 
 message FolderList {
