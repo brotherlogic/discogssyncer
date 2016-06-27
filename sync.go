@@ -1,56 +1,45 @@
 package main
 
 import "errors"
-import "flag"
 import "github.com/brotherlogic/godiscogs"
 import "github.com/golang/protobuf/proto"
 import "io/ioutil"
 import "log"
-import "net"
 import "os"
 import "strconv"
 import "strings"
 import "time"
 
-import "google.golang.org/grpc"
 import "golang.org/x/net/context"
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
 
-// Syncer the configuration for the syncer
-type Syncer struct {
-	saveLocation string
-	token        string
-	host         string
-	port         string
-}
-
 // GetRelease Gets the release and metadata
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
-     releaseData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
-     metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".metadata")
-     release := &pbd.Release{}
-     metadata := &pb.ReleaseMetadata{}
+	releaseData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
+	metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".metadata")
+	release := &pbd.Release{}
+	metadata := &pb.ReleaseMetadata{}
 
-     proto.Unmarshal(releaseData, release)
-     proto.Unmarshal(metadataData, metadata)
-     return release, metadata
+	proto.Unmarshal(releaseData, release)
+	proto.Unmarshal(metadataData, metadata)
+	return release, metadata
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release, folder int) {
-     metadataPath := syncer.saveLocation + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".metadata"
+	metadataPath := syncer.saveLocation + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".metadata"
 
-     metadata := &pb.ReleaseMetadata{}  
-     if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-	metadata.DateAdded = time.Now().Unix()
-	metadata.DateRefreshed = time.Now().Unix()
-     } else {
-          data, _ := ioutil.ReadFile(metadataPath)
-	  proto.Unmarshal(data,metadata)
-	  metadata.DateRefreshed = time.Now().Unix()
-     }
-     data, _ := proto.Marshal(metadata)
-     ioutil.WriteFile(metadataPath, data, 0644)
+	metadata := &pb.ReleaseMetadata{}
+	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+		metadata.DateAdded = time.Now().Unix()
+		metadata.DateRefreshed = time.Now().Unix()
+	} else {
+		data, _ := ioutil.ReadFile(metadataPath)
+		proto.Unmarshal(data, metadata)
+		metadata.DateRefreshed = time.Now().Unix()
+	}
+	data, _ := proto.Marshal(metadata)
+	ioutil.WriteFile(metadataPath, data, 0644)
 }
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
@@ -155,32 +144,4 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 		}
 	}
 	return &releases, nil
-}
-
-//Serve runs up the server
-func (syncer *Syncer) Serve() {
-	lis, err := net.Listen("tcp", ":"+syncer.port)
-	if err != nil {
-		log.Fatal("Unable to serve on port %v", err)
-	}
-
-	s := grpc.NewServer()
-	pb.RegisterDiscogsServiceServer(s, syncer)
-	s.Serve(lis)
-}
-
-func main() {
-	var folder = flag.String("folder", "/home/simon/.discogs", "Location to store the records")
-	var token = flag.String("token", "", "Discogs Token")
-	var port = flag.String("port", "", "Serving port")
-	flag.Parse()
-
-	syncer := Syncer{token: *token, saveLocation: *folder, port: *port}
-
-	if *port == "" {
-		retr := godiscogs.NewDiscogsRetriever(*token)
-		syncer.SaveCollection(retr)
-	} else {
-		syncer.Serve()
-	}
 }
