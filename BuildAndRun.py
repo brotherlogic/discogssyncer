@@ -24,4 +24,4 @@ size_2 = os.path.getsize('./sync')
 if size_1 != size_2:
     for line in os.popen('killall sync').readlines():
         pass
-    subprocess.Popen('./discogssyncer --port 50051')
+    subprocess.Popen(['./discogssyncer', '--port' ,'50051'])
