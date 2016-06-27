@@ -49,17 +49,18 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 		os.MkdirAll(savePath, 0777)
 	}
 
-	data, err := proto.Marshal(rel)
-	if err != nil {
-		log.Fatal("marshaling error: ", err)
-	}
+	data, _ := proto.Marshal(rel)
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
 
 	syncer.saveMetadata(rel, folder)
 }
 
+type saver interface{
+     GetCollection() []godiscogs.Release
+}
+
 // SaveCollection writes out the full collection to files.
-func (syncer *Syncer) SaveCollection(retr *godiscogs.DiscogsRetriever) {
+func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
 	for _, release := range releases {
 		syncer.saveRelease(&release, int(release.FolderId))
@@ -67,16 +68,9 @@ func (syncer *Syncer) SaveCollection(retr *godiscogs.DiscogsRetriever) {
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
-	data, err := ioutil.ReadFile(syncer.saveLocation + "/metadata/folders")
-	if err != nil {
-		log.Fatal("Error reading metadata folders file: %v", err)
-	}
-
+	data, _ := ioutil.ReadFile(syncer.saveLocation + "/metadata/folders")
 	folderData := &pb.FolderList{}
-	err2 := proto.Unmarshal(data, folderData)
-	if err2 != nil {
-		log.Fatal("Error unmarshalling data: %v", err2)
-	}
+	proto.Unmarshal(data, folderData)
 	return folderData
 }
 
@@ -98,15 +92,9 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 	files, _ := ioutil.ReadDir(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/")
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".release") {
-			data, err1 := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name())
-			if err1 != nil {
-				log.Printf("Error reading file: %v", err1)
-			}
+			data, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name())
 			release := &pbd.Release{}
-			err2 := proto.Unmarshal(data, release)
-			if err2 != nil {
-				log.Printf("Error unmarshalling data: %v", err2)
-			}
+			proto.Unmarshal(data, release)
 			releases.Releases = append(releases.Releases, release)
 		}
 	}
@@ -123,10 +111,7 @@ func (syncer *Syncer) SaveFolders(folders []*pbd.Folder) {
 		os.MkdirAll(savePath, 0777)
 	}
 
-	data, err := proto.Marshal(&list)
-	if err != nil {
-		log.Fatal("Marshalling error: %v", err)
-	}
+	data, _ := proto.Marshal(&list)
 	ioutil.WriteFile(savePath+"folders", data, 0644)
 }
 
