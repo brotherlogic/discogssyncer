@@ -1,12 +1,10 @@
 package main
 
 import "golang.org/x/net/context"
-import "google.golang.org/grpc"
 import "os"
 import "testing"
 import "time"
 import pbd "github.com/brotherlogic/godiscogs"
-import pb "github.com/brotherlogic/discogssyncer/server"
 
 func TestSaveLocation(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testfolder/"}
@@ -20,22 +18,20 @@ func TestSaveLocation(t *testing.T) {
 }
 
 func TestSaveMetadata(t *testing.T) {
-     now := time.Now()
-     syncer := Syncer{saveLocation: ".testmetadatasave/"}
-     release := &pbd.Release{Id: 1234}
-     syncer.saveRelease(release, 12)
+	now := time.Now()
+	syncer := Syncer{saveLocation: ".testmetadatasave/"}
+	release := &pbd.Release{Id: 1234}
+	syncer.saveRelease(release, 12)
 
-     _, metadata := syncer.GetRelease(1234, 12)
-     if metadata.DateAdded > now.Unix() {
-     	t.Errorf("Metadata is prior to adding the release: %v (%v)", metadata.DateAdded, metadata.DateAdded - now.Unix())
-     }
+	_, metadata := syncer.GetRelease(1234, 12)
+	if metadata.DateAdded > now.Unix() {
+		t.Errorf("Metadata is prior to adding the release: %v (%v)", metadata.DateAdded, metadata.DateAdded-now.Unix())
+	}
 }
 
 func GetTestSyncer(foldername string) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
-		host:         "localhost",
-		port:         "12345",
 	}
 	return syncer
 }
@@ -57,31 +53,6 @@ func TestGetFolders(t *testing.T) {
 
 	if len(releases.Releases) == 0 {
 		t.Errorf("GetReleasesInFolder came back empty")
-	}
-}
-
-func RunServer() {
-	go func() {
-		syncer := GetTestSyncer(".testfolder/")
-		syncer.Serve()
-	}()
-}
-
-func TestServer(t *testing.T) {
-	RunServer()
-	conn, err := grpc.Dial("localhost:12345", grpc.WithInsecure())
-	if err != nil {
-		t.Errorf("Error connecting to server: %v", err)
-	}
-	defer conn.Close()
-	client := pb.NewDiscogsServiceClient(conn)
-
-	r, err := client.GetCollection(context.Background(), &pb.Empty{})
-	if err != nil {
-		t.Errorf("Error getting collection: %v", err)
-	}
-	if len(r.Releases) == 0 {
-		t.Errorf("Collection has come back empty")
 	}
 }
 
