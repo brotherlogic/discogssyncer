@@ -4,6 +4,7 @@ import "golang.org/x/net/context"
 import "google.golang.org/grpc"
 import "os"
 import "testing"
+import "time"
 import pbd "github.com/brotherlogic/godiscogs"
 import pb "github.com/brotherlogic/discogssyncer/server"
 
@@ -16,6 +17,18 @@ func TestSaveLocation(t *testing.T) {
 	if _, err := os.Stat(".testfolder/12/1234.release"); os.IsNotExist(err) {
 		t.Errorf("File does not exists")
 	}
+}
+
+func TestSaveMetadata(t *testing.T) {
+     now := time.Now()
+     syncer := Syncer{saveLocation: ".testmetadatasave/"}
+     release := &pbd.Release{Id: 1234}
+     syncer.saveRelease(release, 12)
+
+     _, metadata := syncer.GetRelease(1234, 12)
+     if metadata.DateAdded > now.Unix() {
+     	t.Errorf("Metadata is prior to adding the release: %v (%v)", metadata.DateAdded, metadata.DateAdded - now.Unix())
+     }
 }
 
 func GetTestSyncer(foldername string) Syncer {
