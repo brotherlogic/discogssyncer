@@ -1,6 +1,7 @@
 package main
 
 import "flag"
+import "log"
 import "github.com/brotherlogic/godiscogs"
 import "github.com/brotherlogic/goserver"
 import "google.golang.org/grpc"
@@ -33,6 +34,8 @@ func main() {
 	flag.Parse()
 
 	syncer := InitServer(token, folder)
+
+	log.Printf("HERE = %v", *sync)
 
 	if *sync {
 		retr := godiscogs.NewDiscogsRetriever(*token)
