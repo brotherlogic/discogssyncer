@@ -23,7 +23,9 @@ for line in os.popen('go build').readlines():
 size_1 = os.path.getsize('./oldsync')
 size_2 = os.path.getsize('./discogssyncer')
 
-if size_1 != size_2 or new_hash != current_hash:
+running = len(os.popen('ps -ef | grep runn').readlines() > 2
+
+if size_1 != size_2 or new_hash != current_hash or not running:
     for line in os.popen('killall discogssyncer').readlines():
         pass
     subprocess.Popen(['./discogssyncer', '--sync=false'])
