@@ -28,7 +28,7 @@ func InitServer(token *string, folder *string) Syncer {
 }
 
 func main() {
-	var folder = flag.String("folder", "/home/simon/.discogs", "Location to store the records")
+	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
 	flag.Parse()
