@@ -16,6 +16,10 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	return releases
 }
 
+func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
+	return pbd.Release{}, nil
+}
+
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 	var folders = make([]pbd.Folder, 0)
 	folders = append(folders, pbd.Folder{Id: 23, Name: "Testing"})
