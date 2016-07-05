@@ -19,6 +19,7 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 	var folders = make([]pbd.Folder, 0)
 	folders = append(folders, pbd.Folder{Id: 23, Name: "Testing"})
+	folders = append(folders, pbd.Folder{Id: 25, Name: "TestingTwo"})
 	return folders
 }
 
@@ -38,6 +39,15 @@ func TestGetCollection(t *testing.T) {
 
 	if len(releases.Releases) == 0 {
 		t.Errorf("No releases have been returned")
+	}
+
+	folders := syncer.getFolders()
+	if len(folders.Folders) != 2 {
+		t.Errorf("Not enough folders: %v", folders)
+	}
+
+	if folders.Folders[0].Name == folders.Folders[1].Name {
+		t.Errorf("FOlders have same name: %v", folders)
 	}
 }
 
@@ -100,14 +110,16 @@ func GetTestSyncer(foldername string) Syncer {
 
 func TestGetFolders(t *testing.T) {
 	syncer := GetTestSyncer(".testgetfolders/")
-	folderList := &pb.FolderList{}
-	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
-	syncer.SaveFolders(folderList)
+	folders := &pb.FolderList{}
+	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestTwo", Id: 1235})
+	syncer.SaveFolders(folders)
 
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 1234)
 
 	releases, err := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestOne"})
+	releases2, err2 := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestTwo"})
 
 	if err != nil {
 		t.Errorf("Error retrieveing releases: %v", err)
@@ -115,6 +127,14 @@ func TestGetFolders(t *testing.T) {
 
 	if len(releases.Releases) == 0 {
 		t.Errorf("GetReleasesInFolder came back empty")
+	}
+
+	if err2 != nil {
+		t.Errorf("Error retrieving releases: %v", err2)
+	}
+
+	if len(releases2.Releases) != 0 {
+		t.Errorf("Releases returned for folder 2: %v", releases2)
 	}
 }
 
@@ -129,4 +149,5 @@ func TestSaveFolderMetaata(t *testing.T) {
 	if _, err := os.Stat(".testSaveFolderMetadata/metadata/folders"); os.IsNotExist(err) {
 		t.Errorf("Folder metedata has not been save")
 	}
+
 }
