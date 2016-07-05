@@ -58,13 +58,15 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 type saver interface {
 	GetCollection() []godiscogs.Release
 	GetFolders() []godiscogs.Folder
+	GetRelease(id int) (godiscogs.Release, error)
 }
 
 // SaveCollection writes out the full collection to files.
 func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
 	for _, release := range releases {
-		syncer.saveRelease(&release, int(release.FolderId))
+		fullRelease, _ := retr.GetRelease(int(release.Id))
+		syncer.saveRelease(&fullRelease, int(release.FolderId))
 	}
 	folders := retr.GetFolders()
 	folderList := pb.FolderList{}
