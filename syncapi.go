@@ -22,7 +22,7 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 
 // InitServer builds an initial server
 func InitServer(token *string, folder *string) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *token, *folder}
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token}
 	syncer.Register = syncer
 	return syncer
 }
