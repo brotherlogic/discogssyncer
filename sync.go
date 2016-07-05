@@ -55,8 +55,8 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 	syncer.saveMetadata(rel, folder)
 }
 
-type saver interface{
-     GetCollection() []godiscogs.Release
+type saver interface {
+	GetCollection() []godiscogs.Release
 }
 
 // SaveCollection writes out the full collection to files.
