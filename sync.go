@@ -57,6 +57,7 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 
 type saver interface {
 	GetCollection() []godiscogs.Release
+	GetFolders() []godiscogs.Folder
 }
 
 // SaveCollection writes out the full collection to files.
@@ -65,6 +66,12 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	for _, release := range releases {
 		syncer.saveRelease(&release, int(release.FolderId))
 	}
+	folders := retr.GetFolders()
+	folderList := &pb.FolderList{}
+	for _, folder := range folders {
+		folderList.Folders = append(folderList.Folders, &folder)
+	}
+	syncer.SaveFolders(folderList)
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
@@ -102,16 +109,13 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 }
 
 // SaveFolders saves out the list of folders
-func (syncer *Syncer) SaveFolders(folders []*pbd.Folder) {
-	list := pb.FolderList{}
-	list.Folders = append(list.Folders, folders...)
-
+func (syncer *Syncer) SaveFolders(list *pb.FolderList) {
 	savePath := syncer.saveLocation + "metadata/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
 		os.MkdirAll(savePath, 0777)
 	}
 
-	data, _ := proto.Marshal(&list)
+	data, _ := proto.Marshal(list)
 	ioutil.WriteFile(savePath+"folders", data, 0644)
 }
 
