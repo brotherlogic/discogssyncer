@@ -6,12 +6,28 @@ import "golang.org/x/net/context"
 import "google.golang.org/grpc"
 import "log"
 import "math/rand"
+import "strconv"
 import "time"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
+import pbdi "github.com/brotherlogic/discovery/proto"
+import pbc "github.com/brotherlogic/cardserver/card"
+
+func getIP(servername string, ip string, port int) (string, int) {
+	conn, _ := grpc.Dial(ip+":"+strconv.Itoa(port), grpc.WithInsecure())
+	defer conn.Close()
+
+	registry := pbdi.NewDiscoveryServiceClient(conn)
+	entry := pbdi.RegistryEntry{Name: servername}
+	r, _ := registry.Discover(context.Background(), &entry)
+	return r.Ip, int(r.Port)
+}
 
 func getRelease(folderName string, host string, port string) *pbd.Release {
+
+	log.Printf("Connecting to %v, %v", host, port)
+
 	rand.Seed(time.Now().UTC().UnixNano())
 	conn, err := grpc.Dial(host+":"+port, grpc.WithInsecure())
 	defer conn.Close()
@@ -29,11 +45,43 @@ func getRelease(folderName string, host string, port string) *pbd.Release {
 
 func main() {
 	var folder = flag.String("foldername", "", "Folder to retrieve from.")
-	var host = flag.String("host", "10.0.1.35", "Hostname of server.")
-	var port = flag.String("port", "50051", "Port number of server")
+	var host = flag.String("host", "10.0.1.17", "Hostname of server.")
+	var port = flag.String("port", "50055", "Port number of server")
 	flag.Parse()
 
-	rel := getRelease(*folder, *host, *port)
+	portVal, _ := strconv.Atoi(*port)
+	dServer, dPort := getIP("discogssyncer", *host, portVal)
+
+	rel := getRelease(*folder, dServer, strconv.Itoa(dPort))
 	log.Printf("HERE %v", rel)
 	fmt.Printf(pbd.GetReleaseArtist(*rel) + " - " + rel.Title)
+
+	log.Printf("Writing Card: %v", rel)
+	cServer, cPort := getIP("cardserver", *host, portVal)
+	log.Printf("Writing to %v and %v", cServer, cPort)
+	conn, err := grpc.Dial(cServer+":"+strconv.Itoa(cPort), grpc.WithInsecure())
+
+	defer conn.Close()
+	client := pbc.NewCardServiceClient(conn)
+	cards := pbc.CardList{}
+
+	imageURL := ""
+	backupURL := ""
+	for _, image := range rel.Images {
+		if image.Type == "primary" {
+			imageURL = image.Uri
+		}
+		backupURL = image.Uri
+	}
+	if imageURL == "" {
+		imageURL = backupURL
+	}
+
+	card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
+	log.Printf("Writing: %v", card)
+	cards.Cards = append(cards.Cards, &card)
+	_, err = client.AddCards(context.Background(), &cards)
+	if err != nil {
+		log.Printf("Problem adding cards %v", err)
+	}
 }
