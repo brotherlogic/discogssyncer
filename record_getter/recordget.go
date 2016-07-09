@@ -1,7 +1,6 @@
 package main
 
 import "flag"
-import "fmt"
 import "golang.org/x/net/context"
 import "google.golang.org/grpc"
 import "log"
@@ -25,9 +24,6 @@ func getIP(servername string, ip string, port int) (string, int) {
 }
 
 func getRelease(folderName string, host string, port string) *pbd.Release {
-
-	log.Printf("Connecting to %v, %v", host, port)
-
 	rand.Seed(time.Now().UTC().UnixNano())
 	conn, err := grpc.Dial(host+":"+port, grpc.WithInsecure())
 	defer conn.Close()
@@ -39,7 +35,6 @@ func getRelease(folderName string, host string, port string) *pbd.Release {
 		log.Fatal("Problem getting releases %v", err)
 	}
 
-	log.Printf("RELEASES = %v from %v", rand.Intn(len(r.Releases)), len(r.Releases))
 	return r.Releases[rand.Intn(len(r.Releases))]
 }
 
@@ -53,12 +48,8 @@ func main() {
 	dServer, dPort := getIP("discogssyncer", *host, portVal)
 
 	rel := getRelease(*folder, dServer, strconv.Itoa(dPort))
-	log.Printf("HERE %v", rel)
-	fmt.Printf(pbd.GetReleaseArtist(*rel) + " - " + rel.Title)
 
-	log.Printf("Writing Card: %v", rel)
 	cServer, cPort := getIP("cardserver", *host, portVal)
-	log.Printf("Writing to %v and %v", cServer, cPort)
 	conn, err := grpc.Dial(cServer+":"+strconv.Itoa(cPort), grpc.WithInsecure())
 
 	defer conn.Close()
@@ -78,7 +69,6 @@ func main() {
 	}
 
 	card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
-	log.Printf("Writing: %v", card)
 	cards.Cards = append(cards.Cards, &card)
 	_, err = client.AddCards(context.Background(), &cards)
 	if err != nil {
