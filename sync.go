@@ -85,13 +85,21 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 }
 
 // GetReleasesInFolder serves up the releases in a given folder
-func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *godiscogs.Folder) (*pb.ReleaseList, error) {
+func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.ReleaseList, error) {
 
-	folders := syncer.getFolders()
-	for _, folder := range folders.Folders {
-		if folder.Name == in.Name {
-			return syncer.getReleases(int(folder.Id)), nil
+	releases := pb.ReleaseList{}
+	for _, folderSpec := range in.Folders {
+		folders := syncer.getFolders()
+		for _, folder := range folders.Folders {
+			if folder.Name == folderSpec.Name {
+				innerReleases := syncer.getReleases(int(folder.Id))
+				releases.Releases = append(releases.Releases, innerReleases.Releases...)
+			}
 		}
+	}
+
+	if len(releases.Releases) > 0 {
+		return &releases, nil
 	}
 
 	return &pb.ReleaseList{}, errors.New("Folder does not exist in collection")

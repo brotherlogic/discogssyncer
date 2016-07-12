@@ -23,6 +23,6 @@ message ReleaseList {
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
-        rpc GetReleasesInFolder (Folder) returns (ReleaseList) {};
+        rpc GetReleasesInFolder (FolderList) returns (ReleaseList) {};
 }
 

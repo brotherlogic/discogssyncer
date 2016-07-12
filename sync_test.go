@@ -57,7 +57,9 @@ func TestGetCollection(t *testing.T) {
 
 func TestRetrieveEmptyCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testemptyfolder/"}
-	_, err := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestOne", Id: 1234})
+	folderList := &pb.FolderList{}
+	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	_, err := syncer.GetReleasesInFolder(context.Background(), folderList)
 	if err == nil {
 		t.Errorf("Pull from empty folder returns no error!")
 	}
@@ -122,8 +124,13 @@ func TestGetFolders(t *testing.T) {
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 1234)
 
-	releases, err := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestOne"})
-	releases2, err2 := syncer.GetReleasesInFolder(context.Background(), &pbd.Folder{Name: "TestTwo"})
+	folderList := &pb.FolderList{}
+	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne"})
+	releases, err := syncer.GetReleasesInFolder(context.Background(), folderList)
+
+	folderList2 := &pb.FolderList{}
+	folderList2.Folders = append(folderList2.Folders, &pbd.Folder{Name: "TestTwo"})
+	releases2, err2 := syncer.GetReleasesInFolder(context.Background(), folderList2)
 
 	if err != nil {
 		t.Errorf("Error retrieveing releases: %v", err)
@@ -133,7 +140,7 @@ func TestGetFolders(t *testing.T) {
 		t.Errorf("GetReleasesInFolder came back empty")
 	}
 
-	if err2 != nil {
+	if err2 == nil {
 		t.Errorf("Error retrieving releases: %v", err2)
 	}
 
