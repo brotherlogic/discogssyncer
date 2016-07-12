@@ -6,6 +6,7 @@ import "google.golang.org/grpc"
 import "log"
 import "math/rand"
 import "strconv"
+import "strings"
 import "time"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
@@ -23,14 +24,17 @@ func getIP(servername string, ip string, port int) (string, int) {
 	return r.Ip, int(r.Port)
 }
 
-func getRelease(folderName string, host string, port string) *pbd.Release {
+func getRelease(folderName []string, host string, port string) *pbd.Release {
 	rand.Seed(time.Now().UTC().UnixNano())
 	conn, err := grpc.Dial(host+":"+port, grpc.WithInsecure())
 	defer conn.Close()
 	client := pb.NewDiscogsServiceClient(conn)
-	folder := &pbd.Folder{Name: folderName}
-
-	r, err := client.GetReleasesInFolder(context.Background(), folder)
+	folderList := &pb.FolderList{}
+	for _, name := range folderName {
+		folder := &pbd.Folder{Name: name}
+		folderList.Folders = append(folderList.Folders, folder)
+	}
+	r, err := client.GetReleasesInFolder(context.Background(), folderList)
 	if err != nil {
 		log.Fatal("Problem getting releases %v", err)
 	}
@@ -47,7 +51,7 @@ func main() {
 	portVal, _ := strconv.Atoi(*port)
 	dServer, dPort := getIP("discogssyncer", *host, portVal)
 
-	rel := getRelease(*folder, dServer, strconv.Itoa(dPort))
+	rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
 
 	cServer, cPort := getIP("cardserver", *host, portVal)
 	conn, err := grpc.Dial(cServer+":"+strconv.Itoa(cPort), grpc.WithInsecure())
