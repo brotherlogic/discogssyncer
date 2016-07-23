@@ -8,6 +8,9 @@ import "math/rand"
 import "strconv"
 import "strings"
 import "time"
+import "io/ioutil"
+
+import "github.com/golang/protobuf/proto"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
@@ -47,17 +50,35 @@ func main() {
 	var host = flag.String("host", "10.0.1.17", "Hostname of server.")
 	var port = flag.String("port", "50055", "Port number of server")
 	flag.Parse()
-
 	portVal, _ := strconv.Atoi(*port)
-	dServer, dPort := getIP("discogssyncer", *host, portVal)
 
-	rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
+	//Read the last written record
+	data, _ := ioutil.ReadFile("last_written")
+	lastWritten := &pbd.Release{}
+	proto.Unmarshal(data, lastWritten)
 
+	//Get the latest card from the cardserver
 	cServer, cPort := getIP("cardserver", *host, portVal)
 	conn, err := grpc.Dial(cServer+":"+strconv.Itoa(cPort), grpc.WithInsecure())
-
 	defer conn.Close()
 	client := pbc.NewCardServiceClient(conn)
+
+	cardList, _ := client.GetCards(context.Background(), &pbc.Empty{})
+	found := false
+	for _, card := range cardList.Cards {
+	    if lastWritten.Title != "" && card.Hash == "discogs" {
+	       if pbd.GetReleaseArtist(*lastWritten) + " - " + lastWritten.Title == card.Text {
+	       	  found = true
+	       }
+	    }
+	}
+
+	log.Printf("Already found the record %v", found)
+	if !found {
+		dServer, dPort := getIP("discogssyncer", *host, portVal)
+		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
+
+
 	cards := pbc.CardList{}
 
 	imageURL := ""
@@ -72,10 +93,15 @@ func main() {
 		imageURL = backupURL
 	}
 
+	// Write out the chosen record
+	data, _ := proto.Marshal(rel)
+	ioutil.WriteFile("last_written", data, 0644)
+
 	card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
 	cards.Cards = append(cards.Cards, &card)
 	_, err = client.AddCards(context.Background(), &cards)
 	if err != nil {
 		log.Printf("Problem adding cards %v", err)
+	}
 	}
 }
