@@ -103,7 +103,7 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 	syncer.saveRelease(release, 12)
 	_, metadata2 := syncer.GetRelease(1234, 12)
 	if metadata2.DateRefreshed == metadata.DateRefreshed {
-		t.Errorf("Metadata has not been refreshed")
+		t.Errorf("Metadata has not been refreshed: %v and %v", metadata.DateRefreshed, metadata2.DateRefreshed)
 	}
 }
 
