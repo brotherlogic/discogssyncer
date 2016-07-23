@@ -17,17 +17,24 @@ import pbd "github.com/brotherlogic/godiscogs"
 // GetRelease Gets the release and metadata
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
 	releaseData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
-	metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".metadata")
+	metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
 	release := &pbd.Release{}
 	metadata := &pb.ReleaseMetadata{}
 
 	proto.Unmarshal(releaseData, release)
 	proto.Unmarshal(metadataData, metadata)
+
+	log.Printf("Reading %v from %v", metadataData, syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
+
 	return release, metadata
 }
 
-func (syncer *Syncer) saveMetadata(rel *godiscogs.Release, folder int) {
-	metadataPath := syncer.saveLocation + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".metadata"
+func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
+     metadataRoot :=  syncer.saveLocation + "/static-metadata/" 
+	metadataPath :=metadataRoot+ strconv.Itoa(int(rel.Id)) + ".metadata"
+	if _, err := os.Stat(metadataRoot); os.IsNotExist(err) {
+		os.MkdirAll(metadataRoot, 0777)
+	}
 
 	metadata := &pb.ReleaseMetadata{}
 	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
@@ -38,6 +45,7 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release, folder int) {
 		proto.Unmarshal(data, metadata)
 		metadata.DateRefreshed = time.Now().Unix()
 	}
+	log.Printf("Writing out %v", metadata)
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
 }
@@ -51,8 +59,7 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 
 	data, _ := proto.Marshal(rel)
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
-
-	syncer.saveMetadata(rel, folder)
+	syncer.saveMetadata(rel)
 }
 
 type saver interface {
