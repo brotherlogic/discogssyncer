@@ -66,13 +66,14 @@ func main() {
 	cardList, _ := client.GetCards(context.Background(), &pbc.Empty{})
 	found := false
 	for _, card := range cardList.Cards {
-	    if card.Hash == "discogs" {
+	    if lastWritten.Title != "" && card.Hash == "discogs" {
 	       if pbd.GetReleaseArtist(*lastWritten) + " - " + lastWritten.Title == card.Text {
 	       	  found = true
 	       }
 	    }
 	}
 
+	log.Printf("Already found the record %v", found)
 	if !found {
 		dServer, dPort := getIP("discogssyncer", *host, portVal)
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
