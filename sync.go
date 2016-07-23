@@ -52,7 +52,7 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 	//Check that the save folder exists
-	savePath := syncer.saveLocation + strconv.Itoa(folder) + "/"
+	savePath := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
 		os.MkdirAll(savePath, 0777)
 	}
@@ -128,7 +128,7 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 
 // SaveFolders saves out the list of folders
 func (syncer *Syncer) SaveFolders(list *pb.FolderList) {
-	savePath := syncer.saveLocation + "metadata/"
+	savePath := syncer.saveLocation + "/metadata/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
 		os.MkdirAll(savePath, 0777)
 	}
