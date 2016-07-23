@@ -2,9 +2,15 @@ package main
 
 import "flag"
 import "log"
+import "os"
+import "path/filepath"
+import "strings"
+import "time"
+
 import "github.com/brotherlogic/godiscogs"
 import "github.com/brotherlogic/goserver"
 import "google.golang.org/grpc"
+
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 
@@ -15,9 +21,24 @@ type Syncer struct {
 	token        string
 }
 
+var (
+    syncTime int64
+)
+
 // DoRegister does RPC registration
 func (s Syncer) DoRegister(server *grpc.Server) {
 	pb.RegisterDiscogsServiceServer(server, &s)
+}
+
+func doDelete(path string, f os.FileInfo, err error) error {
+     if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
+     	return os.Remove(path)
+     }
+     return nil
+}
+
+func (s Syncer) clean() {
+     filepath.Walk(s.saveLocation, doDelete)
 }
 
 // InitServer builds an initial server
@@ -39,7 +60,9 @@ func main() {
 
 	if *sync {
 		retr := godiscogs.NewDiscogsRetriever(*token)
+		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
+		syncer.clean()
 	} else {
 		syncer.PrepServer()
 		syncer.RegisterServer("discogssyncer", false)
