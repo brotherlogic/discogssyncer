@@ -24,14 +24,14 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	proto.Unmarshal(releaseData, release)
 	proto.Unmarshal(metadataData, metadata)
 
-	log.Printf("Reading %v from %v", metadataData, syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
+	log.Printf("Reading %v from %v", metadataData, syncer.saveLocation+"/static-metadata/"+strconv.Itoa(id)+".metadata")
 
 	return release, metadata
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
-     metadataRoot :=  syncer.saveLocation + "/static-metadata/" 
-	metadataPath :=metadataRoot+ strconv.Itoa(int(rel.Id)) + ".metadata"
+	metadataRoot := syncer.saveLocation + "/static-metadata/"
+	metadataPath := metadataRoot + strconv.Itoa(int(rel.Id)) + ".metadata"
 	if _, err := os.Stat(metadataRoot); os.IsNotExist(err) {
 		os.MkdirAll(metadataRoot, 0777)
 	}
@@ -66,6 +66,7 @@ type saver interface {
 	GetCollection() []godiscogs.Release
 	GetFolders() []godiscogs.Folder
 	GetRelease(id int) (godiscogs.Release, error)
+	MoveToUncategorized(folderID int, releaseID int, instanceID int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -89,6 +90,12 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 	folderData := &pb.FolderList{}
 	proto.Unmarshal(data, folderData)
 	return folderData
+}
+
+// MoveToUncategorized moves a release to the uncategorized folder
+func (syncer *Syncer) MoveToUncategorized(ctx context.Context, in *godiscogs.Release) (*pb.Empty, error) {
+	syncer.retr.MoveToUncategorized(int(in.FolderId), int(in.Id), int(in.InstanceId))
+	return &pb.Empty{}, nil
 }
 
 // GetReleasesInFolder serves up the releases in a given folder

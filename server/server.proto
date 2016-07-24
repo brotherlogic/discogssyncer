@@ -24,5 +24,7 @@ service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
         rpc GetReleasesInFolder (FolderList) returns (ReleaseList) {};
+
+        rpc MoveToUncategorized (Release) returns (Empty) {};
 }
 

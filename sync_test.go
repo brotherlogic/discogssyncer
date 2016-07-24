@@ -27,6 +27,19 @@ func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 	return folders
 }
 
+func (testDiscogsRetriever) MoveToUncategorized(fodlerID int, releaseID int, instanceID int) {
+	// Do nothing
+}
+
+func TestMoveToUncateogrized(t *testing.T) {
+	syncer := GetTestSyncer(".testMoveToUncateogrized")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	_, err := syncer.MoveToUncategorized(context.Background(), release)
+	if err != nil {
+		t.Errorf("Move to uncat has returned error")
+	}
+}
+
 func TestSaveCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testcollectionsave/"}
 	syncer.SaveCollection(&testDiscogsRetriever{})
@@ -110,6 +123,7 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 func GetTestSyncer(foldername string) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
+		retr:         testDiscogsRetriever{},
 	}
 	return syncer
 }
