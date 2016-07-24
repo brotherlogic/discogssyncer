@@ -66,41 +66,47 @@ func main() {
 	cardList, _ := client.GetCards(context.Background(), &pbc.Empty{})
 	found := false
 	for _, card := range cardList.Cards {
-	    if lastWritten.Title != "" && card.Hash == "discogs" {
-	       if pbd.GetReleaseArtist(*lastWritten) + " - " + lastWritten.Title == card.Text {
-	       	  found = true
-	       }
-	    }
+		if lastWritten.Title != "" && card.Hash == "discogs" {
+			if pbd.GetReleaseArtist(*lastWritten)+" - "+lastWritten.Title == card.Text {
+				found = true
+			}
+		}
 	}
 
 	if !found {
 		dServer, dPort := getIP("discogssyncer", *host, portVal)
+
+		//Move the previous record down to uncategorized
+		dConn, _ := grpc.Dial(dServer+":"+strconv.Itoa(dPort), grpc.WithInsecure())
+		defer dConn.Close()
+		dClient := pb.NewDiscogsServiceClient(dConn)
+		dClient.MoveToUncategorized(context.Background(), lastWritten)
+
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
 
+		cards := pbc.CardList{}
 
-	cards := pbc.CardList{}
-
-	imageURL := ""
-	backupURL := ""
-	for _, image := range rel.Images {
-		if image.Type == "primary" {
-			imageURL = image.Uri
+		imageURL := ""
+		backupURL := ""
+		for _, image := range rel.Images {
+			if image.Type == "primary" {
+				imageURL = image.Uri
+			}
+			backupURL = image.Uri
 		}
-		backupURL = image.Uri
-	}
-	if imageURL == "" {
-		imageURL = backupURL
-	}
+		if imageURL == "" {
+			imageURL = backupURL
+		}
 
-	// Write out the chosen record
-	data, _ := proto.Marshal(rel)
-	ioutil.WriteFile("last_written", data, 0644)
+		// Write out the chosen record
+		data, _ := proto.Marshal(rel)
+		ioutil.WriteFile("last_written", data, 0644)
 
-	card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
-	cards.Cards = append(cards.Cards, &card)
-	_, err = client.AddCards(context.Background(), &cards)
-	if err != nil {
-		log.Printf("Problem adding cards %v", err)
-	}
+		card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
+		cards.Cards = append(cards.Cards, &card)
+		_, err = client.AddCards(context.Background(), &cards)
+		if err != nil {
+			log.Printf("Problem adding cards %v", err)
+		}
 	}
 }
