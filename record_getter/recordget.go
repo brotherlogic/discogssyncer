@@ -73,7 +73,6 @@ func main() {
 	    }
 	}
 
-	log.Printf("Already found the record %v", found)
 	if !found {
 		dServer, dPort := getIP("discogssyncer", *host, portVal)
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))

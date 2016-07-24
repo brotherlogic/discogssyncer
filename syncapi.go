@@ -19,6 +19,7 @@ type Syncer struct {
 	*goserver.GoServer
 	saveLocation string
 	token        string
+	retr	     saver
 }
 
 var (
@@ -42,8 +43,8 @@ func (s Syncer) clean() {
 }
 
 // InitServer builds an initial server
-func InitServer(token *string, folder *string) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token}
+func InitServer(token *string, folder *string, retr saver) Syncer{
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr}
 	syncer.Register = syncer
 	return syncer
 }
@@ -53,13 +54,12 @@ func main() {
 	var token = flag.String("token", "", "Discogs Token")
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
 	flag.Parse()
-
-	syncer := InitServer(token, folder)
+	retr := godiscogs.NewDiscogsRetriever(*token)
+	syncer := InitServer(token, folder, retr)
 
 	log.Printf("HERE = %v", *sync)
 
 	if *sync {
-		retr := godiscogs.NewDiscogsRetriever(*token)
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
 		syncer.clean()
