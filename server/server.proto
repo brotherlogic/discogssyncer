@@ -8,6 +8,9 @@ message ReleaseMetadata {
 
 	// The date the release was last refreshed
 	int64 date_refreshed = 2;
+
+        // The instance ID of this entry
+        int instance_id = 3;
 }
 
 message Empty {}
