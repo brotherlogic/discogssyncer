@@ -66,7 +66,7 @@ type saver interface {
 	GetCollection() []godiscogs.Release
 	GetFolders() []godiscogs.Folder
 	GetRelease(id int) (godiscogs.Release, error)
-	MoveToUncategorized(folderID int, releaseID int, instanceID int)
+	MoveToFolder(folderID int, releaseID int, instanceID int, newFolderID int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -93,8 +93,8 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 }
 
 // MoveToUncategorized moves a release to the uncategorized folder
-func (syncer *Syncer) MoveToUncategorized(ctx context.Context, in *godiscogs.Release) (*pb.Empty, error) {
-	syncer.retr.MoveToUncategorized(int(in.FolderId), int(in.Id), int(in.InstanceId))
+func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
+	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
 	return &pb.Empty{}, nil
 }
 
