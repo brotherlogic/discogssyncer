@@ -27,14 +27,15 @@ func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 	return folders
 }
 
-func (testDiscogsRetriever) MoveToUncategorized(fodlerID int, releaseID int, instanceID int) {
+func (testDiscogsRetriever) MoveToFolder(fodlerID int, releaseID int, instanceID int, newFolderID int) {
 	// Do nothing
 }
 
-func TestMoveToUncateogrized(t *testing.T) {
-	syncer := GetTestSyncer(".testMoveToUncateogrized")
+func TestMoveToFolder(t *testing.T) {
+	syncer := GetTestSyncer(".testMoveToFolder")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
-	_, err := syncer.MoveToUncategorized(context.Background(), release)
+	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
+	_, err := syncer.MoveToFolder(context.Background(), releaseMove)
 	if err != nil {
 		t.Errorf("Move to uncat has returned error")
 	}
