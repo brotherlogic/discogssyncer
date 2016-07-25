@@ -74,6 +74,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
 	for _, release := range releases {
 		fullRelease, _ := retr.GetRelease(int(release.Id))
+		fullRelease.InstanceId = release.InstanceId
 		syncer.saveRelease(&fullRelease, int(release.FolderId))
 	}
 	folders := retr.GetFolders()
