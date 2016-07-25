@@ -92,7 +92,7 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 	return folderData
 }
 
-// MoveToUncategorized moves a release to the uncategorized folder
+// MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
 	return &pb.Empty{}, nil
