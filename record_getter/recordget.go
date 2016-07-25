@@ -80,7 +80,8 @@ func main() {
 		dConn, _ := grpc.Dial(dServer+":"+strconv.Itoa(dPort), grpc.WithInsecure())
 		defer dConn.Close()
 		dClient := pb.NewDiscogsServiceClient(dConn)
-		dClient.MoveToUncategorized(context.Background(), lastWritten)
+		folderMove := &pb.ReleaseMove{Release: lastWritten, NewFolderId: 673768}
+		dClient.MoveToFolder(context.Background(), folderMove)
 
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
 
