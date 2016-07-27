@@ -31,11 +31,25 @@ func (testDiscogsRetriever) MoveToFolder(fodlerID int, releaseID int, instanceID
 	// Do nothing
 }
 
+func (testDiscogsRetriever) AddToFolder(fodlerID int, releaseID int) {
+	// Do nothing
+}
+
 func TestMoveToFolder(t *testing.T) {
 	syncer := GetTestSyncer(".testMoveToFolder")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
 	_, err := syncer.MoveToFolder(context.Background(), releaseMove)
+	if err != nil {
+		t.Errorf("Move to uncat has returned error")
+	}
+}
+
+func TestAddToFolder(t *testing.T) {
+	syncer := GetTestSyncer(".testAddToFolder")
+	release := &pbd.Release{Id: 25}
+	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
+	_, err := syncer.AddToFolder(context.Background(), releaseMove)
 	if err != nil {
 		t.Errorf("Move to uncat has returned error")
 	}

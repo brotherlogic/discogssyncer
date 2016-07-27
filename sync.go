@@ -68,6 +68,7 @@ type saver interface {
 	GetFolders() []godiscogs.Folder
 	GetRelease(id int) (godiscogs.Release, error)
 	MoveToFolder(folderID int, releaseID int, instanceID int, newFolderID int)
+	AddToFolder(folderID int, releaseID int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -98,6 +99,12 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
+	return &pb.Empty{}, nil
+}
+
+// AddToFolder adds a release to the specified folder
+func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
+	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
 	return &pb.Empty{}, nil
 }
 
