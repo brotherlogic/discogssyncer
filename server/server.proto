@@ -31,5 +31,7 @@ service DiscogsService {
         rpc GetReleasesInFolder (FolderList) returns (ReleaseList) {};
 
         rpc MoveToFolder (ReleaseMove) returns (Empty) {};
+
+        rpc AddToFolder(ReleaseMove) returns (Empty) {};
 }
 
