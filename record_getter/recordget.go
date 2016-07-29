@@ -65,15 +65,17 @@ func main() {
 
 	cardList, _ := client.GetCards(context.Background(), &pbc.Empty{})
 	found := false
+	foundCard := false
 	for _, card := range cardList.Cards {
 		if lastWritten.Title != "" && card.Hash == "discogs" {
 			if pbd.GetReleaseArtist(*lastWritten)+" - "+lastWritten.Title == card.Text {
 				found = true
 			}
+			foundCard = true
 		}
 	}
 
-	if !found {
+	if !foundCard && !found {
 		dServer, dPort := getIP("discogssyncer", *host, portVal)
 
 		//Move the previous record down to uncategorized
@@ -81,6 +83,7 @@ func main() {
 		defer dConn.Close()
 		dClient := pb.NewDiscogsServiceClient(dConn)
 		folderMove := &pb.ReleaseMove{Release: lastWritten, NewFolderId: 673768}
+		log.Printf("Moving to folder: %v from %v", folderMove, last_written)
 		dClient.MoveToFolder(context.Background(), folderMove)
 
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
