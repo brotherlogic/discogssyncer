@@ -110,7 +110,15 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 
 // UpdateMetadata updates the metadata of a given record
 func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
-	return &pb.ReleaseMetadata{}, nil
+	_, metadata := syncer.GetRelease(int(in.Release.Id), int(in.Release.FolderId))
+	proto.Merge(metadata, in.Update)
+
+	metadataRoot := syncer.saveLocation + "/static-metadata/"
+	metadataPath := metadataRoot + strconv.Itoa(int(in.Release.Id)) + ".metadata"
+	data, _ := proto.Marshal(metadata)
+	ioutil.WriteFile(metadataPath, data, 0644)
+
+	return metadata, nil
 }
 
 // GetReleasesInFolder serves up the releases in a given folder
