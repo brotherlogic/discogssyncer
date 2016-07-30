@@ -122,9 +122,12 @@ func TestUpdateMetadata(t *testing.T) {
 	syncer.saveRelease(release, 12)
 
 	_, metadata := syncer.GetRelease(25, 12)
+	if metadata.DateAdded == 1234 {
+		t.Errorf("Test bleed through on metadata: %v", metadata)
+	}
 
-	newMetadata := pb.ReleaseMetadata{DateAdded: 1234}
-	retMetadata, err := syncer.UpdateMetadata(context.Background(), pb.MetadataUpdate{Release: release, Update: newMetadata})
+	newMetadata := &pb.ReleaseMetadata{DateAdded: 1234}
+	retMetadata, err := syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: newMetadata})
 	if err != nil {
 		t.Errorf("Failed metadata update: %v", err)
 	}
