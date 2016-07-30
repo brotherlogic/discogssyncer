@@ -6,7 +6,7 @@ name = "discogssyncer"
 
 current_hash = os.popen('git rev-parse HEAD').readlines()[0]
 # Update to the latest version
-for line in os.popen('go get -u github.com/brotherlogic/' + name).readlines():
+for line in os.popen('go get -u github.com/brotherlogic/' + name + ' &> /dev/null').readlines():
     pass
 new_hash = os.popen('git rev-parse HEAD').readlines()[0]
 
