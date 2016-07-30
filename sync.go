@@ -108,6 +108,11 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 	return &pb.Empty{}, nil
 }
 
+// UpdateMetadata updates the metadata of a given record
+func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
+	return &pb.ReleaseMetadata{}, nil
+}
+
 // GetReleasesInFolder serves up the releases in a given folder
 func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.ReleaseList, error) {
 
