@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 
+print "Starting Everything"
+
 name = "discogssyncer"
 
 current_hash = os.popen('git rev-parse HEAD').readlines()[0]
