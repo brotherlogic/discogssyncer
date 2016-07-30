@@ -25,6 +25,11 @@ message ReleaseMove {
         int32 new_folder_id = 2;
 }
 
+message MetadataUpdate {
+        Release release = 1;
+        ReleaseMetadata update = 2;
+}
+
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
@@ -33,5 +38,7 @@ service DiscogsService {
         rpc MoveToFolder (ReleaseMove) returns (Empty) {};
 
         rpc AddToFolder(ReleaseMove) returns (Empty) {};
+
+        rpc UpdateMetadata(MetadataUpdate) returns (ReleaseMetadata) {};
 }
 
