@@ -116,6 +116,29 @@ func TestSaveMetadata(t *testing.T) {
 	}
 }
 
+func TestUpdateMetadata(t *testing.T) {
+	syncer := GetTestSyncer(".testupdatemetadata")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 12)
+
+	_, metadata := syncer.GetRelease(25, 12)
+
+	newMetadata := pb.ReleaseMetadata{DateAdded: 1234}
+	retMetadata, err := syncer.UpdateMetadata(context.Background(), pb.MetadataUpdate{Release: release, Update: newMetadata})
+	if err != nil {
+		t.Errorf("Failed metadata update: %v", err)
+	}
+
+	if retMetadata.DateAdded != 1234 {
+		t.Errorf("Date Added has not been updated: %v", retMetadata.DateAdded)
+	}
+
+	_, metadataStored := syncer.GetRelease(25, 12)
+	if metadataStored.DateAdded != 1234 {
+		t.Errorf("Date Added has not been stored: %v", metadataStored.DateAdded)
+	}
+}
+
 func TestSaveAndRefreshMetadata(t *testing.T) {
 	now := time.Now()
 	syncer := Syncer{saveLocation: ".testmetadatasave/"}
