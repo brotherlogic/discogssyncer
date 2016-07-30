@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 print "Starting Everything"
+sys.exit(1)
 
 name = "discogssyncer"
 
