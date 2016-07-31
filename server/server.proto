@@ -45,5 +45,7 @@ service DiscogsService {
         rpc AddToFolder(ReleaseMove) returns (Empty) {};
 
         rpc UpdateMetadata(MetadataUpdate) returns (ReleaseMetadata) {};
+
+        rpc GetMetadata(godiscogs.Release) returns (ReleaseMetadata) {};
 }
 

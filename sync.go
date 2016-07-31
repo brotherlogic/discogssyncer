@@ -121,6 +121,12 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 	return metadata, nil
 }
 
+// GetMetadata gets the metadata for a given release
+func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.ReleaseMetadata, error) {
+	_, metadata := syncer.GetRelease(int(in.Id), int(in.FolderId))
+	return metadata, nil
+}
+
 // GetReleasesInFolder serves up the releases in a given folder
 func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.ReleaseList, error) {
 
