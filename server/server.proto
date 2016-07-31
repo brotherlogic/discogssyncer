@@ -16,20 +16,20 @@ message ReleaseMetadata {
 message Empty {}
 
 message FolderList {
-        repeated Folder folders = 1;
+        repeated godiscogs.Folder folders = 1;
 }
 
 message ReleaseList {
-        repeated Release releases = 1;
+        repeated godiscogs.Release releases = 1;
 }
 
 message ReleaseMove {
-        Release release = 1;
+        godiscogs.Release release = 1;
         int32 new_folder_id = 2;
 }
 
 message MetadataUpdate {
-        Release release = 1;
+        godiscogs.Release release = 1;
         ReleaseMetadata update = 2;
 }
 
