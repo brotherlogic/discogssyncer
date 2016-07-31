@@ -2,16 +2,12 @@ import os
 import subprocess
 import sys
 
-print "Starting Everything"
-
 name = "discogssyncer"
 
 current_hash = os.popen('git rev-parse HEAD').readlines()[0]
 # Update to the latest version
-print "Starting Build"
 for line in os.popen('go get -u github.com/brotherlogic/' + name + ' &> /dev/null').readlines():
     pass
-print "Finished Build"
 new_hash = os.popen('git rev-parse HEAD').readlines()[0]
 
     
