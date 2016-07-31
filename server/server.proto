@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package discogsserver;
+
 import "github.com/brotherlogic/godiscogs/godiscogs.proto";
 
 message ReleaseMetadata {
