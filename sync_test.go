@@ -35,6 +35,22 @@ func (testDiscogsRetriever) AddToFolder(fodlerID int, releaseID int) {
 	// Do nothing
 }
 
+func TestGetMetadata(t *testing.T) {
+	sTime := time.Now().Unix()
+	syncer := GetTestSyncer(".testGetMetadata")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 23)
+	metadata, err := syncer.GetMetadata(context.Background(), release)
+
+	if err != nil {
+		t.Errorf("Error in get metadata : %v", err)
+	}
+
+	if metadata.DateAdded < sTime {
+		t.Errorf("metadata was not stored")
+	}
+}
+
 func TestMoveToFolder(t *testing.T) {
 	syncer := GetTestSyncer(".testMoveToFolder")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
