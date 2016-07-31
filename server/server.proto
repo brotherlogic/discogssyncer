@@ -8,6 +8,9 @@ message ReleaseMetadata {
 
 	// The date the release was last refreshed
 	int64 date_refreshed = 2;
+
+        //The path to the file on iTunes if available
+        string file_path = 3;
 }
 
 message Empty {}
