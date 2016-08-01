@@ -63,7 +63,7 @@ func main() {
 	defer conn.Close()
 	client := pbc.NewCardServiceClient(conn)
 
-	cardList, _ := client.GetCards(context.Background(), &pbc.Empty{})
+	cardList, erf := client.GetCards(context.Background(), &pbc.Empty{})
 	found := false
 	foundCard := false
 	for _, card := range cardList.Cards {
@@ -84,6 +84,7 @@ func main() {
 		dClient := pb.NewDiscogsServiceClient(dConn)
 		folderMove := &pb.ReleaseMove{Release: lastWritten, NewFolderId: 673768}
 		log.Printf("Moving to folder: %v from %v", folderMove, lastWritten)
+		log.Printf("Cardlist was %v from error %v", cardList, erf)
 		dClient.MoveToFolder(context.Background(), folderMove)
 
 		rel := getRelease(strings.Split(*folder, ","), dServer, strconv.Itoa(dPort))
