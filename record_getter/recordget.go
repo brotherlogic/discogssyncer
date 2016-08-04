@@ -107,7 +107,7 @@ func main() {
 		data, _ := proto.Marshal(rel)
 		ioutil.WriteFile("last_written", data, 0644)
 
-		card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS}
+		card := pbc.Card{Text: pbd.GetReleaseArtist(*rel) + " - " + rel.Title, Hash: "discogs", Image: imageURL, Action: pbc.Card_DISMISS, Priority: 100}
 		cards.Cards = append(cards.Cards, &card)
 		_, err = client.AddCards(context.Background(), &cards)
 		if err != nil {
