@@ -185,6 +185,26 @@ func GetTestSyncer(foldername string) Syncer {
 	return syncer
 }
 
+func TestGetFolderById(t *testing.T) {
+	syncer := GetTestSyncer(".testgetfolders/")
+	folders := &pb.FolderList{}
+	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
+	syncer.SaveFolders(folders)
+
+	release := &pbd.Release{Id: 1234}
+	syncer.saveRelease(release, 1234)
+
+	folderList := &pb.FolderList{}
+	folderList.Folders = append(folderList.Folders, &pbd.Folder{Id: 1234})
+	releases, err := syncer.GetReleasesInFolder(context.Background(), folderList)
+	if err != nil {
+		t.Errorf("Failure to get releases: %v", err)
+	}
+	if len(releases.Releases) != 1 {
+		t.Errorf("Bad retrieve of releases: %v", releases)
+	}
+}
+
 func TestGetFolders(t *testing.T) {
 	syncer := GetTestSyncer(".testgetfolders/")
 	folders := &pb.FolderList{}
