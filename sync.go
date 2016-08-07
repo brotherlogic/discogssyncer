@@ -134,7 +134,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 	for _, folderSpec := range in.Folders {
 		folders := syncer.getFolders()
 		for _, folder := range folders.Folders {
-			if folder.Name == folderSpec.Name {
+			if folder.Name == folderSpec.Name || folder.Id == folderSpec.Id {
 				innerReleases := syncer.getReleases(int(folder.Id))
 				releases.Releases = append(releases.Releases, innerReleases.Releases...)
 			}
