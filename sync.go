@@ -69,6 +69,7 @@ type saver interface {
 	GetRelease(id int) (godiscogs.Release, error)
 	MoveToFolder(folderID int, releaseID int, instanceID int, newFolderID int)
 	AddToFolder(folderID int, releaseID int)
+	SetRating(folderID int, releaseID int, instanceID int, rating int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -112,6 +113,13 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	return &pb.Empty{}, nil
+}
+
+// UpdateRating updates the rating of a release
+func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
+	log.Printf("Updating rating %v", in)
+	syncer.retr.SetRating(int(in.FolderId), int(in.Id), int(in.InstanceId), int(in.Rating))
 	return &pb.Empty{}, nil
 }
 
