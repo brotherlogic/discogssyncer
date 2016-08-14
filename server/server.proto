@@ -47,5 +47,6 @@ service DiscogsService {
         rpc UpdateMetadata(MetadataUpdate) returns (ReleaseMetadata) {};
 
         rpc GetMetadata(godiscogs.Release) returns (ReleaseMetadata) {};
-}
 
+				rpc UpdateRating(godiscogs.Release) returns (Empty) {};
+}

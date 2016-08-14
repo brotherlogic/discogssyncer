@@ -35,6 +35,10 @@ func (testDiscogsRetriever) AddToFolder(fodlerID int, releaseID int) {
 	// Do nothing
 }
 
+func (testDiscogsRetriever) SetRating(folderID int, releaseID int, instanceID int, rating int) {
+	// Do nothing
+}
+
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
 	syncer := GetTestSyncer(".testGetMetadata")
