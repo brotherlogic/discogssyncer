@@ -59,6 +59,11 @@ func TestMoveToFolder(t *testing.T) {
 	if err != nil {
 		t.Errorf("Move to uncat has returned error")
 	}
+
+	newRelease, _ := syncer.GetRelease(25, 20)
+	if newRelease == nil || newRelease.FolderId != 20 {
+		t.Errorf("Error in retrieving moved release: %v", newRelease)
+	}
 }
 
 func TestAddToFolder(t *testing.T) {
