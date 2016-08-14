@@ -17,7 +17,7 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 }
 
 func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
-	return pbd.Release{}, nil
+	return pbd.Release{Id: int32(id)}, nil
 }
 
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
@@ -59,6 +59,11 @@ func TestMoveToFolder(t *testing.T) {
 	if err != nil {
 		t.Errorf("Move to uncat has returned error")
 	}
+
+	newRelease, _ := syncer.GetRelease(25, 20)
+	if newRelease == nil || newRelease.FolderId != 20 {
+		t.Errorf("Error in retrieving moved release: %v", newRelease)
+	}
 }
 
 func TestAddToFolder(t *testing.T) {
@@ -68,6 +73,11 @@ func TestAddToFolder(t *testing.T) {
 	_, err := syncer.AddToFolder(context.Background(), releaseMove)
 	if err != nil {
 		t.Errorf("Move to uncat has returned error")
+	}
+
+	newRelease, _ := syncer.GetRelease(25, 20)
+	if newRelease == nil || newRelease.FolderId != 20 {
+		t.Errorf("Error in retrieving added release: %v", newRelease)
 	}
 }
 
