@@ -17,7 +17,7 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 }
 
 func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
-	return pbd.Release{}, nil
+	return pbd.Release{Id: int32(id)}, nil
 }
 
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
