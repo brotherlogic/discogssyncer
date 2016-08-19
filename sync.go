@@ -16,7 +16,11 @@ import pbd "github.com/brotherlogic/godiscogs"
 
 // GetRelease Gets the release and metadata
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
-	releaseData, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
+	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
+	if err != nil {
+		return nil, nil
+	}
+
 	metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
 	release := &pbd.Release{}
 	metadata := &pb.ReleaseMetadata{}
@@ -48,6 +52,10 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	log.Printf("Writing out %v", metadata)
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
+}
+
+func (syncer *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
+	os.Remove(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
 }
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
@@ -125,7 +133,10 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 
 // UpdateMetadata updates the metadata of a given record
 func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
-	_, metadata := syncer.GetRelease(int(in.Release.Id), int(in.Release.FolderId))
+	release, metadata := syncer.GetRelease(int(in.Release.Id), int(in.Release.FolderId))
+	if release == nil {
+		return nil, errors.New("Unable to locate release")
+	}
 	proto.Merge(metadata, in.Update)
 
 	metadataRoot := syncer.saveLocation + "/static-metadata/"

@@ -68,6 +68,11 @@ func TestMoveToFolder(t *testing.T) {
 	if newRelease == nil || newRelease.FolderId != 20 {
 		t.Errorf("Error in retrieving moved release: %v", newRelease)
 	}
+
+	oldRelease, _ := syncer.GetRelease(25, 23)
+	if oldRelease != nil {
+		t.Errorf("Empty Retrieve has not failed %v", oldRelease)
+	}
 }
 
 func TestAddToFolder(t *testing.T) {
@@ -149,9 +154,9 @@ func TestSaveMetadata(t *testing.T) {
 func TestUpdateMetadata(t *testing.T) {
 	syncer := GetTestSyncer(".testupdatemetadata")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
-	syncer.saveRelease(release, 12)
+	syncer.saveRelease(release, 23)
 
-	_, metadata := syncer.GetRelease(25, 12)
+	_, metadata := syncer.GetRelease(25, 23)
 	if metadata.DateAdded == 1234 {
 		t.Errorf("Test bleed through on metadata: %v", metadata)
 	}
@@ -166,7 +171,7 @@ func TestUpdateMetadata(t *testing.T) {
 		t.Errorf("Date Added has not been updated: %v", retMetadata.DateAdded)
 	}
 
-	_, metadataStored := syncer.GetRelease(25, 12)
+	_, metadataStored := syncer.GetRelease(25, 23)
 	if metadataStored.DateAdded != 1234 {
 		t.Errorf("Date Added has not been stored: %v", metadataStored.DateAdded)
 	}
