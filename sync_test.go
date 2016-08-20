@@ -177,6 +177,20 @@ func TestUpdateMetadata(t *testing.T) {
 	}
 }
 
+func TestUpdateRating(t *testing.T) {
+	syncer := GetTestSyncer(".testupdaterating")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 23)
+
+	release.Rating = 5
+	syncer.UpdateRating(context.Background(), release)
+
+	oldRelease, _ := syncer.GetRelease(25, 23)
+	if oldRelease.Rating != 5 {
+		t.Errorf("Rating has not been saved %v", oldRelease)
+	}
+}
+
 func TestSaveAndRefreshMetadata(t *testing.T) {
 	now := time.Now()
 	syncer := Syncer{saveLocation: ".testmetadatasave/"}

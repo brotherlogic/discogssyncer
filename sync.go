@@ -16,6 +16,7 @@ import pbd "github.com/brotherlogic/godiscogs"
 
 // GetRelease Gets the release and metadata
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
+	log.Printf("READING: %v", syncer.saveLocation+"/"+strconv.Itoa(folder)+"/"+strconv.Itoa(id)+".release")
 	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
 	if err != nil {
 		return nil, nil
@@ -27,6 +28,8 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 
 	proto.Unmarshal(releaseData, release)
 	proto.Unmarshal(metadataData, metadata)
+
+	log.Printf("Unmarshalled to %v", release)
 
 	log.Printf("Reading %v from %v", metadataData, syncer.saveLocation+"/static-metadata/"+strconv.Itoa(id)+".metadata")
 
@@ -65,7 +68,7 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 		os.MkdirAll(savePath, 0777)
 	}
 
-	log.Printf("Saving %v to %v", rel, folder)
+	log.Printf("Saving %v to %v", rel, savePath+strconv.Itoa(int(rel.Id))+".release")
 	data, _ := proto.Marshal(rel)
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
 	syncer.saveMetadata(rel)
@@ -128,6 +131,10 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
 	log.Printf("Updating rating %v", in)
 	syncer.retr.SetRating(int(in.FolderId), int(in.Id), int(in.InstanceId), int(in.Rating))
+	fullRelease, _ := syncer.GetRelease(int(in.Id), int(in.FolderId))
+	fullRelease.Rating = int32(in.Rating)
+	log.Printf("SAVING %v", fullRelease)
+	syncer.saveRelease(fullRelease, int(fullRelease.FolderId))
 	return &pb.Empty{}, nil
 }
 
