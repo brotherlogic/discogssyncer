@@ -58,6 +58,8 @@ func TestGetMetadata(t *testing.T) {
 func TestMoveToFolder(t *testing.T) {
 	syncer := GetTestSyncer(".testMoveToFolder")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 23)
+
 	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
 	_, err := syncer.MoveToFolder(context.Background(), releaseMove)
 	if err != nil {
