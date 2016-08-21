@@ -112,9 +112,11 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
+	oldFolder := int(in.Release.FolderId)
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	syncer.deleteRelease(&fullRelease, oldFolder)
 	return &pb.Empty{}, nil
 }
 
