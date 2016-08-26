@@ -109,6 +109,11 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 	return folderData
 }
 
+// GetSingleRelease gets a single release
+func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
+	return syncer.relMap[in.Id], nil
+}
+
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
@@ -124,9 +129,12 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	log.Printf("Adding releases %v", in)
 	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
+	log.Printf("BLAH = %v", syncer.relMap)
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	syncer.relMap[in.Release.Id] = &fullRelease
+	log.Printf("NOW = %v", syncer.relMap)
 	return &pb.Empty{}, nil
 }
 

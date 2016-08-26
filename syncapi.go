@@ -1,29 +1,36 @@
 package main
 
-import "flag"
-import "log"
+import (
+	"flag"
+	"log"
+	"path/filepath"
+	"time"
+
+	"github.com/brotherlogic/goserver"
+	"golang.org/x/net/context"
+
+	pb "github.com/brotherlogic/discogssyncer/server"
+)
+
 import "os"
-import "path/filepath"
+
 import "strings"
-import "time"
 
 import "github.com/brotherlogic/godiscogs"
-import "github.com/brotherlogic/goserver"
+
 import "google.golang.org/grpc"
-
-
-import pb "github.com/brotherlogic/discogssyncer/server"
 
 // Syncer the configuration for the syncer
 type Syncer struct {
 	*goserver.GoServer
 	saveLocation string
 	token        string
-	retr	     saver
+	retr         saver
+	relMap       map[int32]*godiscogs.Release
 }
 
 var (
-    syncTime int64
+	syncTime int64
 )
 
 // DoRegister does RPC registration
@@ -32,20 +39,28 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 }
 
 func doDelete(path string, f os.FileInfo, err error) error {
-     if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
-     	return os.Remove(path)
-     }
-     return nil
+	if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
+		return os.Remove(path)
+	}
+	return nil
 }
 
 func (s Syncer) clean() {
-     filepath.Walk(s.saveLocation, doDelete)
+	filepath.Walk(s.saveLocation, doDelete)
 }
 
 // InitServer builds an initial server
-func InitServer(token *string, folder *string, retr saver) Syncer{
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr}
+func InitServer(token *string, folder *string, retr saver) Syncer {
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release)}
 	syncer.Register = syncer
+	syncer.relMap = make(map[int32]*godiscogs.Release)
+
+	//Build out the release map
+	releases, _ := syncer.GetCollection(context.Background(), &pb.Empty{})
+	for _, release := range releases.Releases {
+		syncer.relMap[release.Id] = release
+	}
+
 	return syncer
 }
 
