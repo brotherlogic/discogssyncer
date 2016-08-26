@@ -92,6 +92,21 @@ func TestAddToFolder(t *testing.T) {
 	}
 }
 
+func TestGetRelease(t *testing.T) {
+	syncer := GetTestSyncer(".testGetRelease")
+	release := &pbd.Release{Id: 25}
+	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
+	_, err := syncer.AddToFolder(context.Background(), releaseMove)
+	if err != nil {
+		t.Errorf("Move to uncat has returned error")
+	}
+
+	newRelease, err := syncer.GetSingleRelease(context.Background(), release)
+	if err != nil || newRelease.FolderId != 20 {
+		t.Errorf("Error in retrieving added release: %v", newRelease)
+	}
+}
+
 func TestSaveCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testcollectionsave/"}
 	syncer.SaveCollection(&testDiscogsRetriever{})
@@ -216,6 +231,7 @@ func GetTestSyncer(foldername string) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
 		retr:         testDiscogsRetriever{},
+		relMap:       make(map[int32]*pbd.Release),
 	}
 	return syncer
 }
