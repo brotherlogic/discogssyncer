@@ -194,6 +194,24 @@ func TestUpdateMetadata(t *testing.T) {
 	}
 }
 
+func TestUpdateMetadataFail(t *testing.T) {
+	syncer := GetTestSyncer(".testupdatemetadatafail")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 23)
+
+	_, metadata := syncer.GetRelease(25, 23)
+	if metadata.DateAdded == 1234 {
+		t.Errorf("Test bleed through on metadata: %v", metadata)
+	}
+
+	newMetadata := &pb.ReleaseMetadata{DateAdded: 1234}
+	newRelease := &pbd.Release{FolderId: 23, Id: 27, InstanceId: 37}
+	_, err := syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: newRelease, Update: newMetadata})
+	if err == nil {
+		t.Errorf("Metadata failed to return error: %v", err)
+	}
+}
+
 func TestUpdateRating(t *testing.T) {
 	syncer := GetTestSyncer(".testupdaterating")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
