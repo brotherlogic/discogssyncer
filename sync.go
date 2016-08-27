@@ -111,7 +111,10 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
-	return syncer.relMap[in.Id], nil
+	if val, ok := syncer.relMap[in.Id]; ok {
+		return val, nil
+	}
+	return nil, errors.New("Unable to find release")
 }
 
 // MoveToFolder moves a release to the specified folder

@@ -107,6 +107,15 @@ func TestGetRelease(t *testing.T) {
 	}
 }
 
+func TestGetReleaseFail(t *testing.T) {
+	syncer := GetTestSyncer(".testGetNoRelease")
+	release := &pbd.Release{Id: 25}
+	newRelease, err := syncer.GetSingleRelease(context.Background(), release)
+	if err == nil {
+		t.Errorf("Failed to error on release: %v", newRelease)
+	}
+}
+
 func TestSaveCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testcollectionsave/"}
 	syncer.SaveCollection(&testDiscogsRetriever{})

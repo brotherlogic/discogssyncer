@@ -52,7 +52,6 @@ func (s Syncer) clean() {
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
 	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release)}
-	syncer.Register = syncer
 	syncer.relMap = make(map[int32]*godiscogs.Release)
 
 	//Build out the release map
@@ -61,6 +60,7 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 		syncer.relMap[release.Id] = release
 	}
 
+	syncer.Register = syncer
 	return syncer
 }
 
