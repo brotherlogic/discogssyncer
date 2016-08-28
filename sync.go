@@ -14,7 +14,7 @@ import "golang.org/x/net/context"
 import pb "github.com/brotherlogic/discogssyncer/server"
 import pbd "github.com/brotherlogic/godiscogs"
 
-// GetRelease Gets the release and metadata
+// GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
 	log.Printf("READING: %v", syncer.saveLocation+"/"+strconv.Itoa(folder)+"/"+strconv.Itoa(id)+".release")
 	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
