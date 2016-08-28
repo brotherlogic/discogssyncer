@@ -4,13 +4,12 @@ import sys
 
 name = "discogssyncer"
 
-current_hash = os.popen('git rev-parse HEAD').readlines()[0]
-# Update to the latest version
-for line in os.popen('go get -u github.com/brotherlogic/' + name + ' &> /dev/null').readlines():
-    pass
+current_hash = ""
+if os.path.isfile('hash'):
+    current_hash = open('hash').readlines()[0]
 new_hash = os.popen('git rev-parse HEAD').readlines()[0]
+open('hash','w').write(new_hash)
 
-    
 # Move the old version over
 for line in os.popen('cp ' + name + ' old' + name).readlines():
     print line.strip()

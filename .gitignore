@@ -27,3 +27,4 @@ test.release
 discogssyncer
 .test*
 .testfolder
+hash
