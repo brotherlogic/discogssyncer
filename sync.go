@@ -1,18 +1,27 @@
 package main
 
-import "errors"
-import "github.com/brotherlogic/godiscogs"
+import (
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
+	"github.com/brotherlogic/godiscogs"
+	"golang.org/x/net/context"
+
+	pbd "github.com/brotherlogic/godiscogs"
+)
+
 import "github.com/golang/protobuf/proto"
-import "io/ioutil"
+
 import "log"
-import "os"
+
 import "strconv"
-import "strings"
+
 import "time"
 
-import "golang.org/x/net/context"
 import pb "github.com/brotherlogic/discogssyncer/server"
-import pbd "github.com/brotherlogic/godiscogs"
 
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
@@ -123,6 +132,8 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 	oldFolder := int(in.Release.FolderId)
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
+	log.Printf("WHAT = %v", syncer)
+	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
 	syncer.deleteRelease(&fullRelease, oldFolder)
 	return &pb.Empty{}, nil

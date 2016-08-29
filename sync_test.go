@@ -1,11 +1,17 @@
 package main
 
-import "golang.org/x/net/context"
-import "os"
-import "testing"
-import "time"
-import pb "github.com/brotherlogic/discogssyncer/server"
-import pbd "github.com/brotherlogic/godiscogs"
+import (
+	"log"
+	"os"
+	"testing"
+	"time"
+
+	"golang.org/x/net/context"
+
+	pb "github.com/brotherlogic/discogssyncer/server"
+	pbd "github.com/brotherlogic/godiscogs"
+	"github.com/brotherlogic/goserver"
+)
 
 type testDiscogsRetriever struct{}
 
@@ -260,6 +266,10 @@ func GetTestSyncer(foldername string) Syncer {
 		retr:         testDiscogsRetriever{},
 		relMap:       make(map[int32]*pbd.Release),
 	}
+	log.Printf("REGISTER: %v", syncer)
+	syncer.GoServer = &goserver.GoServer{}
+	syncer.SkipLog = true
+	syncer.Register = syncer
 	return syncer
 }
 
