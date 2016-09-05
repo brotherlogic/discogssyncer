@@ -154,9 +154,9 @@ func TestRetrieveEmptyCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testemptyfolder/"}
 	folderList := &pb.FolderList{}
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
-	_, err := syncer.GetReleasesInFolder(context.Background(), folderList)
-	if err == nil {
-		t.Errorf("Pull from empty folder returns no error!")
+	rels, err := syncer.GetReleasesInFolder(context.Background(), folderList)
+	if err == nil && len(rels.Releases) > 0 {
+		t.Errorf("Pull from empty folder returns no error! or valid releases")
 	}
 }
 
