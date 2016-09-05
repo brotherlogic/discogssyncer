@@ -199,11 +199,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 		}
 	}
 
-	if len(releases.Releases) > 0 {
-		return &releases, nil
-	}
-
-	return &pb.ReleaseList{}, errors.New("Folder does not exist in collection")
+	return &releases, nil
 }
 
 func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
