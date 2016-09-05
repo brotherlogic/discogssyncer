@@ -309,7 +309,7 @@ func TestGetFolders(t *testing.T) {
 
 	folderList2 := &pb.FolderList{}
 	folderList2.Folders = append(folderList2.Folders, &pbd.Folder{Name: "TestTwo"})
-	releases2, err2 := syncer.GetReleasesInFolder(context.Background(), folderList2)
+	releases2, _ := syncer.GetReleasesInFolder(context.Background(), folderList2)
 
 	if err != nil {
 		t.Errorf("Error retrieveing releases: %v", err)
@@ -317,10 +317,6 @@ func TestGetFolders(t *testing.T) {
 
 	if len(releases.Releases) == 0 {
 		t.Errorf("GetReleasesInFolder came back empty")
-	}
-
-	if err2 == nil {
-		t.Errorf("Error retrieving releases: %v", err2)
 	}
 
 	if len(releases2.Releases) != 0 {
