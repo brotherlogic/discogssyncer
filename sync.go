@@ -132,6 +132,7 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 	oldFolder := int(in.Release.FolderId)
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
+	syncer.relMap[fullRelease.Id] = &fullRelease
 	log.Printf("WHAT = %v", syncer)
 	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))

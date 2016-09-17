@@ -77,6 +77,11 @@ func TestMoveToFolder(t *testing.T) {
 		t.Errorf("Error in retrieving moved release: %v", newRelease)
 	}
 
+	singleRelease, _ := syncer.GetSingleRelease(context.Background(), newRelease)
+	if singleRelease == nil || singleRelease.FolderId != 20 {
+		t.Errorf("Single release retrieve is wrong: %v (%v)", singleRelease, newRelease)
+	}
+
 	oldRelease, _ := syncer.GetRelease(25, 23)
 	if oldRelease != nil {
 		t.Errorf("Empty Retrieve has not failed %v", oldRelease)
