@@ -160,6 +160,7 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 	fullRelease, _ := syncer.GetRelease(int(in.Id), int(in.FolderId))
 	fullRelease.Rating = int32(in.Rating)
 	log.Printf("SAVING %v", fullRelease)
+	syncer.relMap[in.Id] = fullRelease
 	syncer.saveRelease(fullRelease, int(fullRelease.FolderId))
 	return &pb.Empty{}, nil
 }
