@@ -59,6 +59,10 @@ func TestGetMetadata(t *testing.T) {
 	if metadata.DateAdded < sTime {
 		t.Errorf("metadata was not stored")
 	}
+
+	if metadata.Cost < 0 {
+		t.Errorf("Cost was not stored")
+	}
 }
 
 func TestMoveToFolder(t *testing.T) {
