@@ -13,6 +13,9 @@ message ReleaseMetadata {
 
         //The path to the file on iTunes if available
         string file_path = 3;
+
+				// The cost of the record in pence
+				int32 cost = 4;
 }
 
 message Empty {}
