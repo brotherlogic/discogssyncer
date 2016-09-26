@@ -61,9 +61,8 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 		syncer.relMap[release.Id] = release
 	}
 
-	syncer.Register = syncer
-
 	syncer.initWantlist()
+	syncer.Register = syncer
 
 	return syncer
 }
