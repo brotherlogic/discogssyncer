@@ -132,6 +132,8 @@ func (syncer *Syncer) SyncWantlist() {
 			syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: want.Id, Valued: false, Wanted: true})
 		}
 	}
+
+	syncer.saveWantList()
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
@@ -244,6 +246,20 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 		}
 	}
 	return &releases
+}
+
+func (syncer *Syncer) initWantlist() {
+	wldata, _ := ioutil.ReadFile(syncer.saveLocation + "/metadata/wantlist")
+	proto.Unmarshal(wldata, &syncer.wants)
+}
+
+func (syncer *Syncer) saveWantList() {
+	data, _ := proto.Marshal(&syncer.wants)
+	savePath := syncer.saveLocation + "/metadata/"
+	if _, err := os.Stat(savePath); os.IsNotExist(err) {
+		os.MkdirAll(savePath, 0777)
+	}
+	ioutil.WriteFile(savePath+"wantlist", data, 0644)
 }
 
 // SaveFolders saves out the list of folders

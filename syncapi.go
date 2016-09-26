@@ -62,6 +62,9 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 	}
 
 	syncer.Register = syncer
+
+	syncer.initWantlist()
+
 	return syncer
 }
 
@@ -78,6 +81,7 @@ func main() {
 	if *sync {
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
+		syncer.SyncWantlist()
 		syncer.clean()
 	} else {
 		syncer.PrepServer()
