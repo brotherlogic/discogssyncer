@@ -38,6 +38,16 @@ message MetadataUpdate {
         ReleaseMetadata update = 2;
 }
 
+message Want {
+	int32 release_id = 1;
+	bool valued = 2;
+	bool wanted = 3;
+}
+
+message Wantlist {
+	repeated Want want = 1;
+}
+
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
@@ -54,4 +64,6 @@ service DiscogsService {
 				rpc UpdateRating(godiscogs.Release) returns (Empty) {};
 
 				rpc GetSingleRelease(godiscogs.Release) returns (godiscogs.Release) {};
+
+				rpc GetWantlist(Empty) returns (Wantlist) {};
 }

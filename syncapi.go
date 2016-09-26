@@ -27,6 +27,7 @@ type Syncer struct {
 	token        string
 	retr         saver
 	relMap       map[int32]*godiscogs.Release
+	wants        pb.Wantlist
 }
 
 var (
@@ -51,7 +52,7 @@ func (s Syncer) clean() {
 
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release)}
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release), pb.Wantlist{}}
 	syncer.relMap = make(map[int32]*godiscogs.Release)
 
 	//Build out the release map
