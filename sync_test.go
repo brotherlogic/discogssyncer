@@ -54,7 +54,7 @@ func (testDiscogsRetriever) SetRating(folderID int, releaseID int, instanceID in
 
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
-	syncer := GetTestSyncer(".testGetMetadata")
+	syncer := GetTestSyncerNoDelete(".testGetMetadata")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 	metadata, err := syncer.GetMetadata(context.Background(), release)
@@ -73,7 +73,7 @@ func TestGetMetadata(t *testing.T) {
 }
 
 func TestGetWantlist(t *testing.T) {
-	syncer := GetTestSyncer(".testwantlist")
+	syncer := GetTestSyncerNoDelete(".testwantlist")
 	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
@@ -87,8 +87,22 @@ func TestGetWantlist(t *testing.T) {
 	}
 }
 
+func TestLoadWantlistOnStartup(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testwantlistload")
+	if len(syncer.wants.Want) > 0 {
+		t.Errorf("Test is not initialized correctly")
+	}
+	syncer.SyncWantlist()
+
+	syncer2 := GetTestSyncer(".testwantlistload", false)
+	syncer2.initWantlist()
+	if len(syncer2.wants.Want) == 0 {
+		t.Errorf("Wants have not been loaded")
+	}
+}
+
 func TestMoveToFolder(t *testing.T) {
-	syncer := GetTestSyncer(".testMoveToFolder")
+	syncer := GetTestSyncerNoDelete(".testMoveToFolder")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 
@@ -115,7 +129,7 @@ func TestMoveToFolder(t *testing.T) {
 }
 
 func TestAddToFolder(t *testing.T) {
-	syncer := GetTestSyncer(".testAddToFolder")
+	syncer := GetTestSyncerNoDelete(".testAddToFolder")
 	release := &pbd.Release{Id: 25}
 	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
 	_, err := syncer.AddToFolder(context.Background(), releaseMove)
@@ -130,7 +144,7 @@ func TestAddToFolder(t *testing.T) {
 }
 
 func TestGetRelease(t *testing.T) {
-	syncer := GetTestSyncer(".testGetRelease")
+	syncer := GetTestSyncerNoDelete(".testGetRelease")
 	release := &pbd.Release{Id: 25}
 	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
 	_, err := syncer.AddToFolder(context.Background(), releaseMove)
@@ -145,7 +159,7 @@ func TestGetRelease(t *testing.T) {
 }
 
 func TestGetReleaseFail(t *testing.T) {
-	syncer := GetTestSyncer(".testGetNoRelease")
+	syncer := GetTestSyncerNoDelete(".testGetNoRelease")
 	release := &pbd.Release{Id: 25}
 	newRelease, err := syncer.GetSingleRelease(context.Background(), release)
 	if err == nil {
@@ -215,7 +229,7 @@ func TestSaveMetadata(t *testing.T) {
 }
 
 func TestUpdateMetadata(t *testing.T) {
-	syncer := GetTestSyncer(".testupdatemetadata")
+	syncer := GetTestSyncerNoDelete(".testupdatemetadata")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 
@@ -241,7 +255,7 @@ func TestUpdateMetadata(t *testing.T) {
 }
 
 func TestUpdateMetadataFail(t *testing.T) {
-	syncer := GetTestSyncer(".testupdatemetadatafail")
+	syncer := GetTestSyncerNoDelete(".testupdatemetadatafail")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 
@@ -259,7 +273,7 @@ func TestUpdateMetadataFail(t *testing.T) {
 }
 
 func TestUpdateRating(t *testing.T) {
-	syncer := GetTestSyncer(".testupdaterating")
+	syncer := GetTestSyncerNoDelete(".testupdaterating")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 
@@ -291,12 +305,17 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 	}
 }
 
-func GetTestSyncer(foldername string) Syncer {
+func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
 		retr:         testDiscogsRetriever{},
 		relMap:       make(map[int32]*pbd.Release),
 	}
+
+	if delete {
+		os.RemoveAll(syncer.saveLocation)
+	}
+
 	log.Printf("REGISTER: %v", syncer)
 	syncer.GoServer = &goserver.GoServer{}
 	syncer.SkipLog = true
@@ -304,8 +323,12 @@ func GetTestSyncer(foldername string) Syncer {
 	return syncer
 }
 
+func GetTestSyncerNoDelete(foldername string) Syncer {
+	return GetTestSyncer(foldername, true)
+}
+
 func TestGetFolderById(t *testing.T) {
-	syncer := GetTestSyncer(".testgetfolders/")
+	syncer := GetTestSyncerNoDelete(".testgetfolders/")
 	folders := &pb.FolderList{}
 	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 	syncer.SaveFolders(folders)
@@ -325,7 +348,7 @@ func TestGetFolderById(t *testing.T) {
 }
 
 func TestGetFolders(t *testing.T) {
-	syncer := GetTestSyncer(".testgetfolders/")
+	syncer := GetTestSyncerNoDelete(".testgetfolders/")
 	folders := &pb.FolderList{}
 	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestTwo", Id: 1235})
@@ -356,7 +379,7 @@ func TestGetFolders(t *testing.T) {
 }
 
 func TestSaveFolderMetaata(t *testing.T) {
-	syncer := GetTestSyncer(".testSaveFolderMetadata/")
+	syncer := GetTestSyncerNoDelete(".testSaveFolderMetadata/")
 	folderList := &pb.FolderList{}
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestTwo", Id: 1232})
