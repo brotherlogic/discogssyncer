@@ -33,6 +33,13 @@ func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 	return folders
 }
 
+func (testDiscogsRetriever) GetWantlist() ([]pbd.Release, error) {
+	var wants = make([]pbd.Release, 0)
+	wants = append(wants, pbd.Release{FolderId: 23, Id: 25})
+	wants = append(wants, pbd.Release{FolderId: 23, Id: 32})
+	return wants, nil
+}
+
 func (testDiscogsRetriever) MoveToFolder(fodlerID int, releaseID int, instanceID int, newFolderID int) {
 	// Do nothing
 }
@@ -62,6 +69,21 @@ func TestGetMetadata(t *testing.T) {
 
 	if metadata.Cost < 0 {
 		t.Errorf("Cost was not stored")
+	}
+}
+
+func TestGetWantlist(t *testing.T) {
+	syncer := GetTestSyncer(".testwantlist")
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
+	syncer.SyncWantlist()
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
+
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+
+	if len(wantlist.Want) == 0 {
+		t.Errorf("No wants returned")
 	}
 }
 

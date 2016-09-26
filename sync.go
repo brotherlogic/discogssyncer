@@ -90,6 +90,7 @@ type saver interface {
 	MoveToFolder(folderID int, releaseID int, instanceID int, newFolderID int)
 	AddToFolder(folderID int, releaseID int)
 	SetRating(folderID int, releaseID int, instanceID int, rating int)
+	GetWantlist() ([]pbd.Release, error)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -109,6 +110,28 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 		folderList.Folders = append(folderList.Folders, &folder)
 	}
 	syncer.SaveFolders(&folderList)
+}
+
+// SyncWantlist syncs the wantlist with the server
+func (syncer *Syncer) SyncWantlist() {
+	wants, _ := syncer.retr.GetWantlist()
+
+	for _, want := range wants {
+		seen := false
+		var val *pb.Want
+		for _, swant := range syncer.wants.Want {
+			if swant.ReleaseId == want.Id {
+				seen = true
+				val = swant
+			}
+		}
+
+		if seen {
+			val.Wanted = true
+		} else {
+			syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: want.Id, Valued: false, Wanted: true})
+		}
+	}
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
@@ -179,6 +202,11 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 	ioutil.WriteFile(metadataPath, data, 0644)
 
 	return metadata, nil
+}
+
+// GetWantlist gets the wantlist
+func (syncer *Syncer) GetWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
+	return &syncer.wants, nil
 }
 
 // GetMetadata gets the metadata for a given release
