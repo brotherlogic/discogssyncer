@@ -246,6 +246,7 @@ func (syncer *Syncer) initWantlist() {
 
 	for _, want := range syncer.wants.Want {
 		rel, _ := syncer.GetRelease(int(want.ReleaseId), -5)
+		rel.FolderId = -5
 		syncer.relMap[rel.Id] = rel
 	}
 }
