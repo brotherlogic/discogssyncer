@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"path/filepath"
 	"time"
 
@@ -74,8 +73,6 @@ func main() {
 	flag.Parse()
 	retr := godiscogs.NewDiscogsRetriever(*token)
 	syncer := InitServer(token, folder, retr)
-
-	log.Printf("HERE = %v", *sync)
 
 	if *sync {
 		syncTime = time.Now().Unix()
