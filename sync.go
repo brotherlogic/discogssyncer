@@ -243,6 +243,11 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 func (syncer *Syncer) initWantlist() {
 	wldata, _ := ioutil.ReadFile(syncer.saveLocation + "/metadata/wantlist")
 	proto.Unmarshal(wldata, &syncer.wants)
+
+	for _, want := range syncer.wants.Want {
+		rel, _ := syncer.GetRelease(int(want.ReleaseId), -5)
+		syncer.relMap[rel.Id] = rel
+	}
 }
 
 func (syncer *Syncer) saveWantList() {
