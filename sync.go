@@ -15,8 +15,6 @@ import (
 
 import "github.com/golang/protobuf/proto"
 
-import "log"
-
 import "strconv"
 
 import "time"
@@ -25,7 +23,6 @@ import pb "github.com/brotherlogic/discogssyncer/server"
 
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
-	log.Printf("READING: %v", syncer.saveLocation+"/"+strconv.Itoa(folder)+"/"+strconv.Itoa(id)+".release")
 	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
 	if err != nil {
 		return nil, nil
@@ -37,10 +34,6 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 
 	proto.Unmarshal(releaseData, release)
 	proto.Unmarshal(metadataData, metadata)
-
-	log.Printf("Unmarshalled to %v", release)
-
-	log.Printf("Reading %v from %v", metadataData, syncer.saveLocation+"/static-metadata/"+strconv.Itoa(id)+".metadata")
 
 	return release, metadata
 }
@@ -61,7 +54,6 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 		proto.Unmarshal(data, metadata)
 		metadata.DateRefreshed = time.Now().Unix()
 	}
-	log.Printf("Writing out %v", metadata)
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
 }
@@ -77,7 +69,6 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 		os.MkdirAll(savePath, 0777)
 	}
 
-	log.Printf("Saving %v to %v", rel, savePath+strconv.Itoa(int(rel.Id))+".release")
 	data, _ := proto.Marshal(rel)
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
 	syncer.saveMetadata(rel)
@@ -133,6 +124,12 @@ func (syncer *Syncer) SyncWantlist() {
 		}
 	}
 
+	// Cache the want list releases
+	for _, want := range syncer.wants.Want {
+		release, _ := syncer.retr.GetRelease(int(want.ReleaseId))
+		syncer.saveRelease(&release, -5)
+	}
+
 	syncer.saveWantList()
 }
 
@@ -158,7 +155,7 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.relMap[fullRelease.Id] = &fullRelease
-	log.Printf("WHAT = %v", syncer)
+
 	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
 	syncer.deleteRelease(&fullRelease, oldFolder)
@@ -167,24 +164,19 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 
 // AddToFolder adds a release to the specified folder
 func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
-	log.Printf("Adding releases %v", in)
 	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
-	log.Printf("BLAH = %v", syncer.relMap)
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
 	syncer.relMap[in.Release.Id] = &fullRelease
-	log.Printf("NOW = %v", syncer.relMap)
 	return &pb.Empty{}, nil
 }
 
 // UpdateRating updates the rating of a release
 func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
-	log.Printf("Updating rating %v", in)
 	syncer.retr.SetRating(int(in.FolderId), int(in.Id), int(in.InstanceId), int(in.Rating))
 	fullRelease, _ := syncer.GetRelease(int(in.Id), int(in.FolderId))
 	fullRelease.Rating = int32(in.Rating)
-	log.Printf("SAVING %v", fullRelease)
 	syncer.relMap[in.Id] = fullRelease
 	syncer.saveRelease(fullRelease, int(fullRelease.FolderId))
 	return &pb.Empty{}, nil
@@ -279,7 +271,6 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 	bfiles, _ := ioutil.ReadDir(syncer.saveLocation)
 	for _, bfile := range bfiles {
 		if bfile.IsDir() {
-			log.Printf("Searching %v", bfile)
 			folderID, _ := strconv.Atoi(bfile.Name())
 			for _, release := range syncer.getReleases(folderID).Releases {
 				releases.Releases = append(releases.Releases, release)
