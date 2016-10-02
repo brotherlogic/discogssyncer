@@ -81,6 +81,7 @@ type saver interface {
 	AddToFolder(folderID int, releaseID int)
 	SetRating(folderID int, releaseID int, instanceID int, rating int)
 	GetWantlist() ([]pbd.Release, error)
+	RemoveFromWantlist(releaseID int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -146,6 +147,16 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 		return val, nil
 	}
 	return nil, errors.New("Unable to find release")
+}
+
+// CollapseWantlist collapses the wantlist
+func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
+	for _, want := range syncer.wants.Want {
+		syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
+		want.Wanted = false
+	}
+
+	return &syncer.wants, nil
 }
 
 // MoveToFolder moves a release to the specified folder

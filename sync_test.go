@@ -52,6 +52,10 @@ func (testDiscogsRetriever) SetRating(folderID int, releaseID int, instanceID in
 	// Do nothing
 }
 
+func (testDiscogsRetriever) RemoveFromWantlist(releaseID int) {
+	// Do nothing
+}
+
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
 	syncer := GetTestSyncerNoDelete(".testGetMetadata")
@@ -84,6 +88,27 @@ func TestGetWantlist(t *testing.T) {
 
 	if len(wantlist.Want) == 0 {
 		t.Errorf("No wants returned")
+	}
+}
+
+func TestCollapseWantlist(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testcollapsewants")
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
+	syncer.SyncWantlist()
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+	if !wantlist.Want[0].Wanted {
+		t.Errorf("Initial want is not wanted: %v", wantlist)
+	}
+
+	nwantlist, err := syncer.CollapseWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error collapseing wantlist: %v", err)
+	}
+	if nwantlist.Want[0].Wanted {
+		t.Errorf("Want has not been collapsed: %v", nwantlist)
 	}
 }
 

@@ -66,4 +66,6 @@ service DiscogsService {
 				rpc GetSingleRelease(godiscogs.Release) returns (godiscogs.Release) {};
 
 				rpc GetWantlist(Empty) returns (Wantlist) {};
+
+				rpc CollapseWantlist(Empty) returns (Wantlist) {};
 }
