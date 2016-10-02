@@ -82,6 +82,7 @@ type saver interface {
 	SetRating(folderID int, releaseID int, instanceID int, rating int)
 	GetWantlist() ([]pbd.Release, error)
 	RemoveFromWantlist(releaseID int)
+	AddToWantlist(releaseID int)
 }
 
 // SaveCollection writes out the full collection to files.
@@ -153,6 +154,16 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
 	for _, want := range syncer.wants.Want {
 		syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
+		want.Wanted = false
+	}
+
+	return &syncer.wants, nil
+}
+
+// RebuildWantlist rebuilds the wantlist
+func (syncer *Syncer) RebuildWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
+	for _, want := range syncer.wants.Want {
+		syncer.retr.AddToWantlist(int(want.ReleaseId))
 		want.Wanted = false
 	}
 

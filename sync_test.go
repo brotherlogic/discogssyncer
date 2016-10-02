@@ -56,6 +56,10 @@ func (testDiscogsRetriever) RemoveFromWantlist(releaseID int) {
 	// Do nothing
 }
 
+func (testDiscogsRetriever) AddToWantlist(releaseID int) {
+	// Do nothing
+}
+
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
 	syncer := GetTestSyncerNoDelete(".testGetMetadata")
@@ -109,6 +113,14 @@ func TestCollapseWantlist(t *testing.T) {
 	}
 	if nwantlist.Want[0].Wanted {
 		t.Errorf("Want has not been collapsed: %v", nwantlist)
+	}
+
+	nwantlist2, err := syncer.RebuildWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error rebuilding wantlist: %v", err)
+	}
+	if nwantlist2.Want[0].Wanted {
+		t.Errorf("Want has not been rebuilt: %v", nwantlist2)
 	}
 }
 

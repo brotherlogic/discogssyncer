@@ -68,4 +68,6 @@ service DiscogsService {
 				rpc GetWantlist(Empty) returns (Wantlist) {};
 
 				rpc CollapseWantlist(Empty) returns (Wantlist) {};
+
+				rpc RebuildWantlist(Empty) returns (Wantlist) {};
 }
