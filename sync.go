@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -11,13 +12,11 @@ import (
 	"golang.org/x/net/context"
 
 	pbd "github.com/brotherlogic/godiscogs"
+	"github.com/golang/protobuf/proto"
+	"time"
 )
 
-import "github.com/golang/protobuf/proto"
-
 import "strconv"
-
-import "time"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 
@@ -108,6 +107,7 @@ func (syncer *Syncer) SyncWantlist() {
 	wants, _ := syncer.retr.GetWantlist()
 
 	for _, want := range wants {
+		log.Printf("CHECKING %v", want)
 		seen := false
 		var val *pb.Want
 		for _, swant := range syncer.wants.Want {
