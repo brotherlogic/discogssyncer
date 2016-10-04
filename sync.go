@@ -36,17 +36,18 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	return release, metadata
 }
 
-func (syncer *Syncer) getMonthlySpend(year int, month time.Month) int {
+// GetMonthlySpend gets the monthly spend
+func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0
 	for _, rel := range syncer.relMap {
 		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 		datev := time.Unix(metadata.DateAdded, 0)
-		if datev.Year() == year && datev.Month() == month {
+		if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
 			spend += int(metadata.Cost)
 		}
 	}
 
-	return spend
+	return &pb.SpendResponse{TotalSpend: int32(spend)}, nil
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {

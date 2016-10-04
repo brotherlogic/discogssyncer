@@ -91,8 +91,12 @@ func TestGetMonthlySpend(t *testing.T) {
 
 	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
 
-	if syncer.getMonthlySpend(1977, 10) != 200 {
-		t.Errorf("Monthly spend is miscalculated: %v", syncer.getMonthlySpend(1977, 10))
+	spend, err := syncer.GetMonthlySpend(context.Background(), &pb.SpendRequest{Month: 10, Year: 1977})
+	if err != nil {
+		t.Errorf("Fail to get monthly spend: %v", err)
+	}
+	if int(spend.TotalSpend) != 200 {
+		t.Errorf("Monthly spend is miscalculated: %v", spend)
 	}
 }
 
