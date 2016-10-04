@@ -48,6 +48,15 @@ message Wantlist {
 	repeated Want want = 1;
 }
 
+message SpendRequest {
+	int32 month = 1;
+	int32 year = 2;
+}
+
+message SpendResponse {
+	int32 total_spend = 1;
+}
+
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
@@ -70,4 +79,6 @@ service DiscogsService {
 				rpc CollapseWantlist(Empty) returns (Wantlist) {};
 
 				rpc RebuildWantlist(Empty) returns (Wantlist) {};
+
+				rpc GetMonthlySpend(SpendRequest) returns (SpendResponse) {};
 }
