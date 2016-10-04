@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -35,6 +34,19 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	proto.Unmarshal(metadataData, metadata)
 
 	return release, metadata
+}
+
+func (syncer *Syncer) getMonthlySpend(year int, month time.Month) int {
+	spend := 0
+	for _, rel := range syncer.relMap {
+		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
+		datev := time.Unix(metadata.DateAdded, 0)
+		if datev.Year() == year && datev.Month() == month {
+			spend += int(metadata.Cost)
+		}
+	}
+
+	return spend
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
@@ -109,7 +121,6 @@ func (syncer *Syncer) SyncWantlist() {
 	wants, _ := syncer.retr.GetWantlist()
 
 	for _, want := range wants {
-		log.Printf("CHECKING %v", want)
 		seen := false
 		var val *pb.Want
 		for _, swant := range syncer.wants.Want {

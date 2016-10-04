@@ -80,6 +80,22 @@ func TestGetMetadata(t *testing.T) {
 	}
 }
 
+func TestGetMonthlySpend(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetMetadata")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.AddToFolder(context.Background(), &pb.ReleaseMove{Release: release, NewFolderId: 23})
+	metadata, _ := syncer.GetMetadata(context.Background(), release)
+	metadata.Cost = 200
+	birthday, _ := time.Parse("02/01/06", "22/10/77")
+	metadata.DateAdded = birthday.Unix()
+
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
+
+	if syncer.getMonthlySpend(1977, 10) != 200 {
+		t.Errorf("Monthly spend is miscalculated: %v", syncer.getMonthlySpend(1977, 10))
+	}
+}
+
 func TestGetWantlist(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testwantlist")
 	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
