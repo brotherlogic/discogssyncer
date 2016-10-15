@@ -35,8 +35,8 @@ func (testDiscogsRetriever) GetFolders() []pbd.Folder {
 
 func (testDiscogsRetriever) GetWantlist() ([]pbd.Release, error) {
 	var wants = make([]pbd.Release, 0)
-	wants = append(wants, pbd.Release{FolderId: 23, Id: 25})
-	wants = append(wants, pbd.Release{FolderId: 23, Id: 32})
+	wants = append(wants, pbd.Release{FolderId: 23, Id: 256})
+	wants = append(wants, pbd.Release{FolderId: 23, Id: 324})
 	return wants, nil
 }
 
@@ -117,7 +117,7 @@ func TestGetWantlist(t *testing.T) {
 
 func TestCollapseWantlist(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testcollapsewants")
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256})
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -252,6 +252,27 @@ func TestGetCollection(t *testing.T) {
 	}
 }
 
+func TestGetCollectionNoWantlist(t *testing.T) {
+	syncer := GetTestSyncer(".testcollectionnowantlist", true)
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 56})
+	syncer.SyncWantlist()
+	syncer.SaveCollection(&testDiscogsRetriever{})
+
+	releases, err := syncer.GetCollection(context.Background(), &pb.Empty{})
+
+	if err != nil {
+		t.Errorf("Error returned on Get Collection %v", err)
+	}
+
+	for _, rel := range releases.Releases {
+		if rel.FolderId == -1 || rel.FolderId == 0 {
+			t.Errorf("GetCollection has returned something on the wantlist: %v", rel)
+		} else {
+			log.Printf("SHERE = %v", rel)
+		}
+	}
+}
+
 func TestRetrieveEmptyCollection(t *testing.T) {
 	syncer := Syncer{saveLocation: ".testemptyfolder/"}
 	folderList := &pb.FolderList{}
@@ -373,7 +394,6 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 		os.RemoveAll(syncer.saveLocation)
 	}
 
-	log.Printf("REGISTER: %v", syncer)
 	syncer.GoServer = &goserver.GoServer{}
 	syncer.SkipLog = true
 	syncer.Register = syncer
