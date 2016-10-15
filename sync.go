@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -12,10 +13,9 @@ import (
 
 	pbd "github.com/brotherlogic/godiscogs"
 	"github.com/golang/protobuf/proto"
+	"strconv"
 	"time"
 )
-
-import "strconv"
 
 import pb "github.com/brotherlogic/discogssyncer/server"
 
@@ -75,6 +75,8 @@ func (syncer *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
 }
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
+	log.Printf("SAVING %v -> %v", rel, folder)
+
 	//Check that the save folder exists
 	savePath := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
@@ -310,7 +312,7 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 	releases := pb.ReleaseList{}
 	bfiles, _ := ioutil.ReadDir(syncer.saveLocation)
 	for _, bfile := range bfiles {
-		if bfile.IsDir() {
+		if bfile.IsDir() && bfile.Name() != "-5" {
 			folderID, _ := strconv.Atoi(bfile.Name())
 			for _, release := range syncer.getReleases(folderID).Releases {
 				releases.Releases = append(releases.Releases, release)
