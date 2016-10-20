@@ -117,7 +117,8 @@ func TestGetWantlist(t *testing.T) {
 
 func TestCollapseWantlist(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testcollapsewants")
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256})
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 257, Valued: true, Wanted: true})
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -134,13 +135,19 @@ func TestCollapseWantlist(t *testing.T) {
 	if nwantlist.Want[0].Wanted {
 		t.Errorf("Want has not been collapsed: %v", nwantlist)
 	}
+	if !nwantlist.Want[1].Wanted {
+		t.Errorf("Valued records as not been maintained: %v", nwantlist)
+	}
 
 	nwantlist2, err := syncer.RebuildWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
 		t.Errorf("Error rebuilding wantlist: %v", err)
 	}
-	if nwantlist2.Want[0].Wanted {
+	if !nwantlist2.Want[0].Wanted {
 		t.Errorf("Want has not been rebuilt: %v", nwantlist2)
+	}
+	if !nwantlist2.Want[1].Wanted {
+		t.Errorf("Valued records as not been maintained: %v (%v)", nwantlist2, nwantlist2.Want[1])
 	}
 }
 

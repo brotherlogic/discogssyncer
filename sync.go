@@ -167,8 +167,11 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 // CollapseWantlist collapses the wantlist
 func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
 	for _, want := range syncer.wants.Want {
-		syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
-		want.Wanted = false
+		if !want.Valued {
+			log.Printf("AVOIDING %v", want)
+			syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
+			want.Wanted = false
+		}
 	}
 
 	return &syncer.wants, nil
@@ -178,7 +181,7 @@ func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.W
 func (syncer *Syncer) RebuildWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
 	for _, want := range syncer.wants.Want {
 		syncer.retr.AddToWantlist(int(want.ReleaseId))
-		want.Wanted = false
+		want.Wanted = true
 	}
 
 	return &syncer.wants, nil
