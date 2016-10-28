@@ -100,6 +100,18 @@ type saver interface {
 	AddToWantlist(releaseID int)
 }
 
+// EditWant edits a want in the wantlist
+func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, error) {
+	for _, want := range syncer.wants.Want {
+		if want.ReleaseId == wantIn.ReleaseId {
+			want.Valued = wantIn.Valued
+		}
+	}
+	syncer.saveWantList()
+
+	return wantIn, nil
+}
+
 // SaveCollection writes out the full collection to files.
 func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
