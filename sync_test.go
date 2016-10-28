@@ -115,6 +115,39 @@ func TestGetWantlist(t *testing.T) {
 	}
 }
 
+func TestSetWant(t *testing.T) {
+	syncer := GetTestSyncer(".testsetwant", true)
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+
+	wantedit := &pb.Want{ReleaseId: 256, Valued: true}
+	syncer.EditWant(context.Background(), wantedit)
+
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+
+	if len(wantlist.Want) != 1 {
+		t.Errorf("Wrong number of wants : %v", wantlist)
+	}
+
+	if !wantlist.Want[0].Valued {
+		t.Errorf("Want is not valued: %v", wantlist)
+	}
+
+	wantedit.Valued = false
+	syncer.EditWant(context.Background(), wantedit)
+
+	wantlist, err = syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+
+	if wantlist.Want[0].Valued {
+		t.Errorf("Want has remained valued %v", wantlist)
+	}
+}
+
 func TestCollapseWantlist(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testcollapsewants")
 	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
