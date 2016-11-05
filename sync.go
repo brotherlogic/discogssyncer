@@ -75,8 +75,6 @@ func (syncer *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
 }
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
-	log.Printf("SAVING %v -> %v", rel, folder)
-
 	//Check that the save folder exists
 	savePath := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
