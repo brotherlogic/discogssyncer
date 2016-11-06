@@ -184,44 +184,19 @@ func TestCollapseWantlist(t *testing.T) {
 	}
 }
 
-func TestLoadWantlistOnStartup(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testwantlistload")
-	if len(syncer.wants.Want) > 0 {
-		t.Errorf("Test is not initialized correctly")
-	}
-	syncer.SyncWantlist()
+func TestDeleteWant(t *testing.T) {
+	syncer := GetTestSyncer(".testsetwant", true)
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
 
-	syncer2 := GetTestSyncer(".testwantlistload", false)
-	syncer2.initWantlist()
-	if len(syncer2.wants.Want) == 0 {
-		t.Errorf("Wants have not been loaded")
-	}
-}
+	deleteWant := &pb.Want{ReleaseId: 256}
+	syncer.DeleteWant(context.Background(), deleteWant)
 
-func TestMoveToFolder(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testMoveToFolder")
-	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
-	syncer.saveRelease(release, 23)
-
-	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
-	_, err := syncer.MoveToFolder(context.Background(), releaseMove)
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
-		t.Errorf("Move to uncat has returned error")
+		t.Errorf("Error getting wantlist: %v", err)
 	}
-
-	newRelease, _ := syncer.GetRelease(25, 20)
-	if newRelease == nil || newRelease.FolderId != 20 {
-		t.Errorf("Error in retrieving moved release: %v", newRelease)
-	}
-
-	singleRelease, _ := syncer.GetSingleRelease(context.Background(), newRelease)
-	if singleRelease == nil || singleRelease.FolderId != 20 {
-		t.Errorf("Single release retrieve is wrong: %v (%v)", singleRelease, newRelease)
-	}
-
-	oldRelease, _ := syncer.GetRelease(25, 23)
-	if oldRelease != nil {
-		t.Errorf("Empty Retrieve has not failed %v", oldRelease)
+	if len(wantlist.Want) != 0 {
+		t.Errorf("Wrong number of wants returned: %v", wantlist)
 	}
 }
 
