@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
 	"github.com/brotherlogic/goserver"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	pb "github.com/brotherlogic/discogssyncer/server"
@@ -47,6 +49,17 @@ func doDelete(path string, f os.FileInfo, err error) error {
 
 func (s Syncer) clean() {
 	filepath.Walk(s.saveLocation, doDelete)
+}
+
+func (s *Syncer) initWantlist() {
+	wldata, _ := ioutil.ReadFile(s.saveLocation + "/metadata/wantlist")
+	proto.Unmarshal(wldata, &s.wants)
+
+	for _, want := range s.wants.Want {
+		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
+		rel.FolderId = -5
+		s.relMap[rel.Id] = rel
+	}
 }
 
 // InitServer builds an initial server
