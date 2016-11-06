@@ -83,4 +83,6 @@ service DiscogsService {
 				rpc GetMonthlySpend(SpendRequest) returns (SpendResponse) {};
 
 				rpc EditWant(Want) returns (Want) {};
+
+				rpc DeleteWant(Want) returns (Empty) {};
 }
