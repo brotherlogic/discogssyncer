@@ -318,6 +318,7 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, e
 
 	if index >= 0 {
 		syncer.wants.Want = append(syncer.wants.Want[:index], syncer.wants.Want[index+1:]...)
+		syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
 	}
 
 	return &pb.Empty{}, nil
