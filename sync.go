@@ -336,3 +336,8 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 	}
 	return &releases, nil
 }
+
+// DeleteWant removes a want from the system
+func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, error) {
+	return &pb.Empty{}, nil
+}
