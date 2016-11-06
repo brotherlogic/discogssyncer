@@ -2,22 +2,20 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/brotherlogic/godiscogs"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	pb "github.com/brotherlogic/discogssyncer/server"
 	pbd "github.com/brotherlogic/godiscogs"
-	"github.com/golang/protobuf/proto"
-	"strconv"
-	"time"
 )
-
-import pb "github.com/brotherlogic/discogssyncer/server"
 
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
@@ -68,10 +66,6 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	}
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
-}
-
-func (syncer *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
-	os.Remove(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
 }
 
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
@@ -199,20 +193,6 @@ func (syncer *Syncer) RebuildWantlist(ctx context.Context, in *pb.Empty) (*pb.Wa
 	return &syncer.wants, nil
 }
 
-// MoveToFolder moves a release to the specified folder
-func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
-	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
-	oldFolder := int(in.Release.FolderId)
-	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
-	fullRelease.FolderId = int32(in.NewFolderId)
-	syncer.relMap[fullRelease.Id] = &fullRelease
-
-	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
-	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
-	syncer.deleteRelease(&fullRelease, oldFolder)
-	return &pb.Empty{}, nil
-}
-
 // AddToFolder adds a release to the specified folder
 func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
@@ -291,17 +271,6 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 	return &releases
 }
 
-func (syncer *Syncer) initWantlist() {
-	wldata, _ := ioutil.ReadFile(syncer.saveLocation + "/metadata/wantlist")
-	proto.Unmarshal(wldata, &syncer.wants)
-
-	for _, want := range syncer.wants.Want {
-		rel, _ := syncer.GetRelease(int(want.ReleaseId), -5)
-		rel.FolderId = -5
-		syncer.relMap[rel.Id] = rel
-	}
-}
-
 func (syncer *Syncer) saveWantList() {
 	data, _ := proto.Marshal(&syncer.wants)
 	savePath := syncer.saveLocation + "/metadata/"
@@ -335,4 +304,21 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 		}
 	}
 	return &releases, nil
+}
+
+// DeleteWant removes a want from the system
+func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, error) {
+	//Remove the want file and remove from
+	index := -1
+	for i, val := range syncer.wants.Want {
+		if val.ReleaseId == in.ReleaseId {
+			index = i
+		}
+	}
+
+	if index >= 0 {
+		syncer.wants.Want = append(syncer.wants.Want[:index], syncer.wants.Want[index+1:]...)
+	}
+
+	return &pb.Empty{}, nil
 }
