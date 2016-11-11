@@ -55,6 +55,7 @@ message SpendRequest {
 
 message SpendResponse {
 	int32 total_spend = 1;
+	repeated MetadataUpdate spends = 2;
 }
 
 service DiscogsService {
