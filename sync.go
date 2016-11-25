@@ -38,12 +38,14 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0
 	var updates []*pb.MetadataUpdate
-	for _, rel := range syncer.relMap {
-		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
-		datev := time.Unix(metadata.DateAdded, 0)
-		if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
-			spend += int(metadata.Cost)
-			updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
+	for _, folder := range syncer.getFolders().Folders {
+		for _, rel := range syncer.getReleases(folder.Id).Releases {
+			_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
+			datev := time.Unix(metadata.DateAdded, 0)
+			if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
+				spend += int(metadata.Cost)
+				updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
+			}
 		}
 	}
 
