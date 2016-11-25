@@ -5,18 +5,17 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/brotherlogic/godiscogs"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	pb "github.com/brotherlogic/discogssyncer/server"
 	pbd "github.com/brotherlogic/godiscogs"
-	"github.com/golang/protobuf/proto"
-	"strconv"
-	"time"
 )
-
-import pb "github.com/brotherlogic/discogssyncer/server"
 
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
@@ -38,15 +37,17 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 // GetMonthlySpend gets the monthly spend
 func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0
+	var updates []*pb.MetadataUpdate
 	for _, rel := range syncer.relMap {
 		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 		datev := time.Unix(metadata.DateAdded, 0)
 		if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
 			spend += int(metadata.Cost)
+			updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
 		}
 	}
 
-	return &pb.SpendResponse{TotalSpend: int32(spend)}, nil
+	return &pb.SpendResponse{TotalSpend: int32(spend), Spends: updates}, nil
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
@@ -69,13 +70,7 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	ioutil.WriteFile(metadataPath, data, 0644)
 }
 
-func (syncer *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
-	os.Remove(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
-}
-
 func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
-	log.Printf("SAVING %v -> %v", rel, folder)
-
 	//Check that the save folder exists
 	savePath := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/"
 	if _, err := os.Stat(savePath); os.IsNotExist(err) {
@@ -324,5 +319,8 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, e
 	if index >= 0 {
 		syncer.wants.Want = append(syncer.wants.Want[:index], syncer.wants.Want[index+1:]...)
 	}
+
+	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
+
 	return &pb.Empty{}, nil
 }

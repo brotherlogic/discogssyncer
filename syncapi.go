@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"os"
+	"strings"
+
 	pb "github.com/brotherlogic/discogssyncer/server"
+	"github.com/brotherlogic/godiscogs"
 )
-
-import "os"
-
-import "strings"
-
-import "github.com/brotherlogic/godiscogs"
 
 import "google.golang.org/grpc"
 
@@ -36,6 +35,15 @@ var (
 	syncTime int64
 )
 
+func (s *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
+	os.Remove(s.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
+}
+
+// DoRegister does RPC registration
+func (s Syncer) DoRegister(server *grpc.Server) {
+	pb.RegisterDiscogsServiceServer(server, &s)
+}
+
 // MoveToFolder moves a release to the specified folder
 func (s *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	s.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
@@ -48,11 +56,6 @@ func (s *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empt
 	s.saveRelease(&fullRelease, int(in.NewFolderId))
 	s.deleteRelease(&fullRelease, oldFolder)
 	return &pb.Empty{}, nil
-}
-
-// DoRegister does RPC registration
-func (s Syncer) DoRegister(server *grpc.Server) {
-	pb.RegisterDiscogsServiceServer(server, &s)
 }
 
 func doDelete(path string, f os.FileInfo, err error) error {
@@ -92,17 +95,6 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 	s.Register = s
 
 	return s
-}
-
-func (s *Syncer) initWantlist() {
-	wldata, _ := ioutil.ReadFile(s.saveLocation + "/metadata/wantlist")
-	proto.Unmarshal(wldata, &s.wants)
-
-	for _, want := range s.wants.Want {
-		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
-		rel.FolderId = -5
-		s.relMap[rel.Id] = rel
-	}
 }
 
 func main() {
