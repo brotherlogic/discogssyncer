@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-		"strconv"	
+	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -35,17 +35,6 @@ var (
 	syncTime int64
 )
 
-func (s *Syncer) initWantlist() {
-	wldata, _ := ioutil.ReadFile(s.saveLocation + "/metadata/wantlist")
-	proto.Unmarshal(wldata, &s.wants)
-
-	for _, want := range s.wants.Want {
-		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
-		rel.FolderId = -5
-		s.relMap[rel.Id] = rel
-	}
-}
-
 func (s *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
 	os.Remove(s.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
 }
@@ -69,7 +58,6 @@ func (s *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empt
 	return &pb.Empty{}, nil
 }
 
-
 func doDelete(path string, f os.FileInfo, err error) error {
 	if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
 		return os.Remove(path)
@@ -81,22 +69,32 @@ func (s Syncer) clean() {
 	filepath.Walk(s.saveLocation, doDelete)
 }
 
+func (s *Syncer) initWantlist() {
+	wldata, _ := ioutil.ReadFile(s.saveLocation + "/metadata/wantlist")
+	proto.Unmarshal(wldata, &s.wants)
+
+	for _, want := range s.wants.Want {
+		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
+		rel.FolderId = -5
+		s.relMap[rel.Id] = rel
+	}
+}
 
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release), pb.Wantlist{}}
-	syncer.relMap = make(map[int32]*godiscogs.Release)
+	s := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release), pb.Wantlist{}}
+	s.relMap = make(map[int32]*godiscogs.Release)
 
 	//Build out the release map
-	releases, _ := syncer.GetCollection(context.Background(), &pb.Empty{})
+	releases, _ := s.GetCollection(context.Background(), &pb.Empty{})
 	for _, release := range releases.Releases {
-		syncer.relMap[release.Id] = release
+		s.relMap[release.Id] = release
 	}
 
-	syncer.initWantlist()
-	syncer.Register = syncer
+	s.initWantlist()
+	s.Register = s
 
-	return syncer
+	return s
 }
 
 func main() {
@@ -105,16 +103,16 @@ func main() {
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
 	flag.Parse()
 	retr := godiscogs.NewDiscogsRetriever(*token)
-	syncer := InitServer(token, folder, retr)
+	s := InitServer(token, folder, retr)
 
 	if *sync {
 		syncTime = time.Now().Unix()
-		syncer.SaveCollection(retr)
-		syncer.SyncWantlist()
-		syncer.clean()
+		s.SaveCollection(retr)
+		s.SyncWantlist()
+		s.clean()
 	} else {
-		syncer.PrepServer()
-		syncer.RegisterServer("discogssyncer", false)
-		syncer.Serve()
+		s.PrepServer()
+		s.RegisterServer("discogss", false)
+		s.Serve()
 	}
 }
