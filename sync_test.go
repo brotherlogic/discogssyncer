@@ -198,6 +198,15 @@ func TestDeleteWant(t *testing.T) {
 	if len(wantlist.Want) != 0 {
 		t.Errorf("Wrong number of wants returned: %v", wantlist)
 	}
+
+	//Now restore the want list
+	nwantlist, err := syncer.RebuildWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error restoring wantlist %v", err)
+	}
+	if len(nwantlist.Want) != 0 {
+		t.Errorf("Restored wantlist is not empty: %v", nwantlist)
+	}
 }
 
 func TestAddToFolder(t *testing.T) {
