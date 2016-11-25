@@ -307,7 +307,7 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 }
 
 // DeleteWant removes a want from the system
-func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, error) {
+func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist, error) {
 	//Remove the want file and remove from
 	index := -1
 	for i, val := range syncer.wants.Want {
@@ -322,5 +322,5 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Empty, e
 
 	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
 
-	return &pb.Empty{}, nil
+	return &syncer.wants, nil
 }
