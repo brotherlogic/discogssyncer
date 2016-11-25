@@ -39,7 +39,7 @@ func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest)
 	spend := 0
 	var updates []*pb.MetadataUpdate
 	for _, folder := range syncer.getFolders().Folders {
-		for _, rel := range syncer.getReleases(folder.Id).Releases {
+		for _, rel := range syncer.getReleases(int(folder.Id)).Releases {
 			_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 			datev := time.Unix(metadata.DateAdded, 0)
 			if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
