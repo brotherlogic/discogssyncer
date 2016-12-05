@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -174,7 +173,6 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
 	for _, want := range syncer.wants.Want {
 		if !want.Valued {
-			log.Printf("AVOIDING %v", want)
 			syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
 			want.Wanted = false
 		}

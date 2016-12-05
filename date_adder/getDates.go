@@ -27,7 +27,6 @@ func getIP(servername string, ip string, port int) (string, int) {
 }
 
 func setDate(releaseID int, folderID int, date string) {
-	log.Printf("Setting %v -> %v", releaseID, date)
 	layout := "02-Jan-06 03:04 PM"
 	t, err := time.Parse(layout, date)
 	if err != nil {
@@ -46,12 +45,10 @@ func setDate(releaseID int, folderID int, date string) {
 	defer conn.Close()
 
 	client := pb.NewDiscogsServiceClient(conn)
-	r, err := client.UpdateMetadata(context.Background(), update)
+	_, err = client.UpdateMetadata(context.Background(), update)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Printf("Moved %v", r)
 }
 
 func processFile(filename string) {
