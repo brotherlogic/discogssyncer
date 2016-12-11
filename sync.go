@@ -240,7 +240,6 @@ func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.Rel
 
 // GetReleasesInFolder serves up the releases in a given folder
 func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.ReleaseList, error) {
-
 	releases := pb.ReleaseList{}
 	for _, folderSpec := range in.Folders {
 		folders := syncer.getFolders()
