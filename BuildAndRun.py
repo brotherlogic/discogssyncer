@@ -36,6 +36,6 @@ if size_1 != size_2 or new_hash != current_hash or not running:
     with open('out.txt', 'w') as output:
         server = subprocess.Popen('./' + name, shell=True, stdout=output, stderr=output)
         out, err = server.communicate()
-        output.write(out)
-        output.write(err)
-        output.write(server.returncode)
+        output.write("%r" % out)
+        output.write("%r" % err)
+        output.write("%r" % server.returncode)
