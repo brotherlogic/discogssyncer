@@ -34,6 +34,22 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	return release, metadata
 }
 
+func match(query string, str string) bool {
+	return strings.Contains(strings.ToLower(str), strings.ToLower(query))
+}
+
+// Search performs a search of the database
+func (syncer *Syncer) Search(ctx context.Context, req *pb.SearchRequest) (*pb.ReleaseList, error) {
+	all, _ := syncer.GetCollection(ctx, &pb.Empty{})
+	fil := &pb.ReleaseList{}
+	for _, rel := range all.Releases {
+		if match(req.Query, rel.Title) || match(req.Query, pbd.GetReleaseArtist(*rel)) {
+			fil.Releases = append(fil.Releases, rel)
+		}
+	}
+	return fil, nil
+}
+
 // GetMonthlySpend gets the monthly spend
 func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0

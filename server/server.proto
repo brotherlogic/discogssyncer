@@ -58,6 +58,10 @@ message SpendResponse {
 	repeated MetadataUpdate spends = 2;
 }
 
+message SearchRequest {
+	string query = 1;
+}
+
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 

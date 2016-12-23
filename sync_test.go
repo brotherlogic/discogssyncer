@@ -60,6 +60,24 @@ func (testDiscogsRetriever) AddToWantlist(releaseID int) {
 	// Do nothing
 }
 
+func TestSearch(t *testing.T) {
+	syncer := GetTestSyncer(".testSearch", true)
+	release1 := &pbd.Release{Title: "Spiderland", FolderId: 23, Id: 25, InstanceId: 37}
+	release2 := &pbd.Release{Title: "FutureWorld", FolderId: 23, Id: 27, InstanceId: 39}
+
+	syncer.saveRelease(release1, 23)
+	syncer.saveRelease(release2, 23)
+
+	res, err := syncer.Search(context.Background(), &pb.SearchRequest{Query: "spider"})
+	if err != nil {
+		t.Errorf("Failure to search: %v", err)
+	}
+
+	if len(res.Releases) != 1 || res.Releases[0].Id != 25 {
+		t.Errorf("Search has failed: %v", res)
+	}
+}
+
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
 	syncer := GetTestSyncerNoDelete(".testGetMetadata")
