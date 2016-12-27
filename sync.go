@@ -180,9 +180,12 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
+	log.Printf("Getting Single Release: %v", in)
 	if val, ok := syncer.relMap[in.Id]; ok {
+		log.Printf("Returning %v", val)
 		return val, nil
 	}
+	log.Printf("Returning nil!")
 	return nil, errors.New("Unable to find release")
 }
 
@@ -253,6 +256,7 @@ func (syncer *Syncer) GetWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantli
 // GetMetadata gets the metadata for a given release
 func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.ReleaseMetadata, error) {
 	_, metadata := syncer.GetRelease(int(in.Id), int(in.FolderId))
+	log.Printf("Getting Metadata for %v -> %v", in, metadata)
 	return metadata, nil
 }
 
