@@ -21,6 +21,7 @@ import (
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
 	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
 	if err != nil {
+		log.Printf("Failing to read file: %v", err)
 		return nil, nil
 	}
 
@@ -54,7 +55,8 @@ func (syncer *Syncer) Search(ctx context.Context, req *pb.SearchRequest) (*pb.Re
 func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0
 	var updates []*pb.MetadataUpdate
-	for _, rel := range syncer.relMap {
+	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
+	for _, rel := range col.Releases {
 		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 		datev := time.Unix(metadata.DateAdded, 0)
 		if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
@@ -181,9 +183,12 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
 	log.Printf("Getting Single Release: %v", in)
-	if val, ok := syncer.relMap[in.Id]; ok {
-		log.Printf("Returning %v", val)
-		return val, nil
+	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
+	for _, rel := range col.Releases {
+		if rel.Id == in.Id {
+			log.Printf("Returning %v", rel)
+			return rel, nil
+		}
 	}
 	log.Printf("Returning nil!")
 	return nil, errors.New("Unable to find release")
@@ -218,7 +223,6 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
-	syncer.relMap[in.Release.Id] = &fullRelease
 	return &pb.Empty{}, nil
 }
 
@@ -227,7 +231,6 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 	syncer.retr.SetRating(int(in.FolderId), int(in.Id), int(in.InstanceId), int(in.Rating))
 	fullRelease, _ := syncer.GetRelease(int(in.Id), int(in.FolderId))
 	fullRelease.Rating = int32(in.Rating)
-	syncer.relMap[in.Id] = fullRelease
 	syncer.saveRelease(fullRelease, int(fullRelease.FolderId))
 	return &pb.Empty{}, nil
 }

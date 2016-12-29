@@ -420,7 +420,6 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
 		retr:         testDiscogsRetriever{},
-		relMap:       make(map[int32]*pbd.Release),
 	}
 
 	if delete {
