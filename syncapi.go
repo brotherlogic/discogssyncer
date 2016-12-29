@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-		"strconv"	
+	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -27,7 +27,6 @@ type Syncer struct {
 	saveLocation string
 	token        string
 	retr         saver
-	relMap       map[int32]*godiscogs.Release
 	wants        pb.Wantlist
 }
 
@@ -42,7 +41,6 @@ func (s *Syncer) initWantlist() {
 	for _, want := range s.wants.Want {
 		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
 		rel.FolderId = -5
-		s.relMap[rel.Id] = rel
 	}
 }
 
@@ -61,14 +59,12 @@ func (s *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empt
 	oldFolder := int(in.Release.FolderId)
 	fullRelease, _ := s.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
-	s.relMap[fullRelease.Id] = &fullRelease
 
 	s.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
 	s.saveRelease(&fullRelease, int(in.NewFolderId))
 	s.deleteRelease(&fullRelease, oldFolder)
 	return &pb.Empty{}, nil
 }
-
 
 func doDelete(path string, f os.FileInfo, err error) error {
 	if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
@@ -81,18 +77,9 @@ func (s Syncer) clean() {
 	filepath.Walk(s.saveLocation, doDelete)
 }
 
-
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, make(map[int32]*godiscogs.Release), pb.Wantlist{}}
-	syncer.relMap = make(map[int32]*godiscogs.Release)
-
-	//Build out the release map
-	releases, _ := syncer.GetCollection(context.Background(), &pb.Empty{})
-	for _, release := range releases.Releases {
-		syncer.relMap[release.Id] = release
-	}
-
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, pb.Wantlist{}}
 	syncer.initWantlist()
 	syncer.Register = syncer
 
