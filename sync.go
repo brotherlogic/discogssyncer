@@ -190,6 +190,13 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 			return rel, nil
 		}
 	}
+
+	// We might be asking for a want here
+	rel, _ := syncer.GetRelease(int(in.Id), -5)
+	if rel != nil {
+		return rel, nil
+	}
+
 	log.Printf("Returning nil!")
 	return nil, errors.New("Unable to find release")
 }
