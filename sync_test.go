@@ -109,12 +109,8 @@ func TestGetMetadataFailWithNoMetadata(t *testing.T) {
 	os.Remove(".testGetMetadataFailWithNo/static-metadata/25.metadata")
 
 	metadata, err := syncer.GetMetadata(context.Background(), release)
-	if err != nil {
-		t.Errorf("Error in get metadata : %v", err)
-	}
-
-	if metadata != nil {
-		t.Errorf("We should have no metadata here: %v", metadata)
+	if err == nil {
+		t.Errorf("Error in get metadata, should have errored : %v", metadata)
 	}
 }
 
