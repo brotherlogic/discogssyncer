@@ -264,6 +264,23 @@ func TestGetRelease(t *testing.T) {
 	}
 }
 
+func TestGetReleaseFromCache(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetReleaseCache")
+	release := &pbd.Release{Id: 25}
+	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
+	_, err := syncer.AddToFolder(context.Background(), releaseMove)
+	if err != nil {
+		t.Errorf("Move to uncat has returned error")
+	}
+
+	// The first should put us in the cache
+	syncer.GetSingleRelease(context.Background(), release)
+	newRelease, err := syncer.GetSingleRelease(context.Background(), release)
+	if err != nil || newRelease.FolderId != 20 {
+		t.Errorf("Error in retrieving added release: %v", newRelease)
+	}
+}
+
 func TestGetReleaseGetsWantlist(t *testing.T) {
 	syncer := GetTestSyncer(".testreleasewant", true)
 	release := &pbd.Release{Id: 25}
@@ -300,7 +317,7 @@ func TestSaveCollection(t *testing.T) {
 }
 
 func TestGetCollection(t *testing.T) {
-	syncer := Syncer{saveLocation: ".testcollectionsave/"}
+	syncer := Syncer{saveLocation: ".testcollectionsave/", cache: make(map[int32]string)}
 	syncer.SaveCollection(&testDiscogsRetriever{})
 
 	releases, err := syncer.GetCollection(context.Background(), &pb.Empty{})
@@ -366,7 +383,7 @@ func TestSaveLocation(t *testing.T) {
 
 func TestSaveMetadata(t *testing.T) {
 	now := time.Now()
-	syncer := Syncer{saveLocation: ".testmetadatasave/"}
+	syncer := Syncer{saveLocation: ".testmetadatasave/", cache: make(map[int32]string)}
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 12)
 
@@ -436,7 +453,7 @@ func TestUpdateRating(t *testing.T) {
 
 func TestSaveAndRefreshMetadata(t *testing.T) {
 	now := time.Now()
-	syncer := Syncer{saveLocation: ".testmetadatasave/"}
+	syncer := Syncer{saveLocation: ".testmetadatasave/", cache: make(map[int32]string)}
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 12)
 
@@ -457,6 +474,7 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
 		retr:         testDiscogsRetriever{},
+		cache:        make(map[int32]string),
 	}
 
 	if delete {
