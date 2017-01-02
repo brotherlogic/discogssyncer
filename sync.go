@@ -24,15 +24,18 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 		log.Printf("Failing to read file: %v", err)
 		return nil, nil
 	}
-
-	metadataData, _ := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
 	release := &pbd.Release{}
-	metadata := &pb.ReleaseMetadata{}
-
 	proto.Unmarshal(releaseData, release)
-	proto.Unmarshal(metadataData, metadata)
 
-	return release, metadata
+	metadataData, err := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
+	if err == nil {
+		metadata := &pb.ReleaseMetadata{}
+		proto.Unmarshal(metadataData, metadata)
+		return release, metadata
+	}
+
+	// We have no metadata for this release
+	return release, nil
 }
 
 func match(query string, str string) bool {
