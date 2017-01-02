@@ -182,6 +182,33 @@ func TestSetWant(t *testing.T) {
 	}
 }
 
+func TestSaveWantDoesNotSaveMetadata(t *testing.T) {
+	syncer := GetTestSyncer(".testsavewantdoesnotsavemetadata", true)
+	r := &pbd.Release{Id: 25, Title: "MadeUpRelease", FolderId: -5}
+	syncer.saveRelease(r, -5)
+
+	meta, err := syncer.GetMetadata(context.Background(), r)
+	if err != nil {
+		t.Errorf("Failure in get metadata: %v", err)
+	} else {
+		if meta.DateAdded > 0 {
+			t.Errorf("Wantlist sync has set the date added: %v", meta)
+		}
+	}
+	log.Printf("META = %v", meta)
+
+	r3 := &pbd.Release{Id: 25, Title: "MadeUpRelease", FolderId: 24}
+	syncer.saveRelease(r3, 24)
+	meta3, err := syncer.GetMetadata(context.Background(), r3)
+	if err != nil {
+		t.Errorf("Failure in get metadata: %v", err)
+	} else {
+		if meta3.DateAdded <= 0 {
+			t.Errorf("Want has not converted to purchase: %v", meta3)
+		}
+	}
+}
+
 func TestCollapseWantlist(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testcollapsewants")
 	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})

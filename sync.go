@@ -35,8 +35,11 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	if err == nil {
 		metadata := &pb.ReleaseMetadata{}
 		proto.Unmarshal(metadataData, metadata)
+		log.Printf("Read the metadata: %v", metadata)
 		return release, metadata
 	}
+
+	log.Printf("Error in reading metadata: %v", err)
 
 	// We have no metadata for this release
 	return release, nil
@@ -76,6 +79,7 @@ func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest)
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
+	log.Printf("SAVING METADATA: %v", rel)
 	metadataRoot := syncer.saveLocation + "/static-metadata/"
 	metadataPath := metadataRoot + strconv.Itoa(int(rel.Id)) + ".metadata"
 	if _, err := os.Stat(metadataRoot); os.IsNotExist(err) {
@@ -84,13 +88,22 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 
 	metadata := &pb.ReleaseMetadata{}
 	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-		metadata.DateAdded = time.Now().Unix()
+		// Only set the date added if this isn't a want
+		if rel.FolderId >= 0 {
+			metadata.DateAdded = time.Now().Unix()
+		}
 		metadata.DateRefreshed = time.Now().Unix()
 	} else {
 		data, _ := ioutil.ReadFile(metadataPath)
 		proto.Unmarshal(data, metadata)
 		metadata.DateRefreshed = time.Now().Unix()
+
+		//Set the data added if this is not a want
+		if rel.FolderId >= 0 && metadata.DateAdded <= 0 {
+			metadata.DateAdded = time.Now().Unix()
+		}
 	}
+	log.Printf("SAVING %v", metadata)
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
 }
