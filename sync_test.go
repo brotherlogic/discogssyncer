@@ -85,16 +85,36 @@ func TestGetMetadata(t *testing.T) {
 	syncer.saveRelease(release, 23)
 	metadata, err := syncer.GetMetadata(context.Background(), release)
 
+	if err != nil || metadata == nil {
+		t.Errorf("Error in get metadata : %v", err)
+	}
+
+	if metadata != nil {
+		if metadata.DateAdded < sTime {
+			t.Errorf("metadata was not stored")
+		}
+
+		if metadata.Cost < 0 {
+			t.Errorf("Cost was not stored")
+		}
+	}
+}
+
+func TestGetMetadataFailWithNoMetadata(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetMetadataFailWithNo")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.saveRelease(release, 23)
+
+	//Force delete the metadata
+	os.Remove(".testGetMetadataFailWithNo/static-metadata/25.metadata")
+
+	metadata, err := syncer.GetMetadata(context.Background(), release)
 	if err != nil {
 		t.Errorf("Error in get metadata : %v", err)
 	}
 
-	if metadata.DateAdded < sTime {
-		t.Errorf("metadata was not stored")
-	}
-
-	if metadata.Cost < 0 {
-		t.Errorf("Cost was not stored")
+	if metadata != nil {
+		t.Errorf("We should have no metadata here: %v", metadata)
 	}
 }
 
