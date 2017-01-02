@@ -28,6 +28,7 @@ type Syncer struct {
 	token        string
 	retr         saver
 	wants        pb.Wantlist
+	cache        map[int32]string
 }
 
 var (
@@ -79,7 +80,7 @@ func (s Syncer) clean() {
 
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, pb.Wantlist{}}
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, pb.Wantlist{}, make(map[int32]string)}
 	syncer.initWantlist()
 	syncer.Register = syncer
 
