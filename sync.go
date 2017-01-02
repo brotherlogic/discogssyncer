@@ -19,11 +19,15 @@ import (
 
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
-	releaseData, err := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release")
+	filename := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release"
+	releaseData, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("Failing to read file: %v", err)
 		return nil, nil
 	}
+
+	log.Printf("Adding %v to cache", id)
+	syncer.cache[int32(id)] = filename
 	release := &pbd.Release{}
 	proto.Unmarshal(releaseData, release)
 
@@ -31,8 +35,11 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	if err == nil {
 		metadata := &pb.ReleaseMetadata{}
 		proto.Unmarshal(metadataData, metadata)
+		log.Printf("Read the metadata: %v", metadata)
 		return release, metadata
 	}
+
+	log.Printf("Error in reading metadata: %v", err)
 
 	// We have no metadata for this release
 	return release, nil
@@ -72,6 +79,7 @@ func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest)
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
+	log.Printf("SAVING METADATA: %v", rel)
 	metadataRoot := syncer.saveLocation + "/static-metadata/"
 	metadataPath := metadataRoot + strconv.Itoa(int(rel.Id)) + ".metadata"
 	if _, err := os.Stat(metadataRoot); os.IsNotExist(err) {
@@ -80,13 +88,22 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 
 	metadata := &pb.ReleaseMetadata{}
 	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-		metadata.DateAdded = time.Now().Unix()
+		// Only set the date added if this isn't a want
+		if rel.FolderId >= 0 {
+			metadata.DateAdded = time.Now().Unix()
+		}
 		metadata.DateRefreshed = time.Now().Unix()
 	} else {
 		data, _ := ioutil.ReadFile(metadataPath)
 		proto.Unmarshal(data, metadata)
 		metadata.DateRefreshed = time.Now().Unix()
+
+		//Set the data added if this is not a want
+		if rel.FolderId >= 0 && metadata.DateAdded <= 0 {
+			metadata.DateAdded = time.Now().Unix()
+		}
 	}
+	log.Printf("SAVING %v", metadata)
 	data, _ := proto.Marshal(metadata)
 	ioutil.WriteFile(metadataPath, data, 0644)
 }
@@ -186,6 +203,17 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
 	log.Printf("Getting Single Release: %v", in)
+
+	if val, ok := syncer.cache[in.Id]; ok {
+		log.Printf("READING FROM CACHE: %v", val)
+		releaseData, err := ioutil.ReadFile(val)
+		if err == nil {
+			release := &pbd.Release{}
+			proto.Unmarshal(releaseData, release)
+			return release, nil
+		}
+	}
+
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
 		if rel.Id == in.Id {
@@ -298,9 +326,11 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 	files, _ := ioutil.ReadDir(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/")
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".release") {
-			data, _ := ioutil.ReadFile(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name())
+			filename := syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name()
+			data, _ := ioutil.ReadFile(filename)
 			release := &pbd.Release{}
 			proto.Unmarshal(data, release)
+			syncer.cache[release.Id] = filename
 			releases.Releases = append(releases.Releases, release)
 		}
 	}
