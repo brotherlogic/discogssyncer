@@ -248,6 +248,27 @@ func TestGetRelease(t *testing.T) {
 	}
 }
 
+func TestGetReleaseGetsWantlist(t *testing.T) {
+	syncer := GetTestSyncer(".testreleasewant", true)
+	release := &pbd.Release{Id: 25}
+	releaseMove := &pb.ReleaseMove{Release: release, NewFolderId: 20}
+	_, err := syncer.AddToFolder(context.Background(), releaseMove)
+	if err != nil {
+		t.Errorf("Error in adding release: %v", err)
+	}
+	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.SyncWantlist()
+
+	// Retrieve a want directly
+	retRel, err := syncer.GetSingleRelease(context.Background(), &pbd.Release{Id: 256})
+	if err != nil {
+		t.Errorf("Error in getting release: %v", err)
+	}
+	if retRel.Id != 256 {
+		t.Errorf("Release has come back bad: %v", retRel)
+	}
+}
+
 func TestGetReleaseFail(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testGetNoRelease")
 	release := &pbd.Release{Id: 25}
