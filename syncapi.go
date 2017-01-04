@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -17,9 +18,8 @@ import (
 
 	pb "github.com/brotherlogic/discogssyncer/server"
 	"github.com/brotherlogic/godiscogs"
+	"google.golang.org/grpc"
 )
-
-import "google.golang.org/grpc"
 
 // Syncer the configuration for the syncer
 type Syncer struct {
@@ -96,6 +96,10 @@ func main() {
 	syncer := InitServer(token, folder, retr)
 
 	if *sync {
+		//Turn off logging
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
 		syncer.SyncWantlist()
