@@ -275,10 +275,11 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 
 // UpdateMetadata updates the metadata of a given record
 func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
-	release, metadata := syncer.GetRelease(int(in.Release.Id), int(in.Release.FolderId))
-	if release == nil {
-		return nil, errors.New("Unable to locate release")
+	metadata, err := syncer.GetMetadata(ctx, in.Release)
+	if err != nil {
+		return nil, err
 	}
+
 	proto.Merge(metadata, in.Update)
 
 	metadataRoot := syncer.saveLocation + "/static-metadata/"
