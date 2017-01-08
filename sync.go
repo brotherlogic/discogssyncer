@@ -21,16 +21,15 @@ import (
 func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
 	filename := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release"
 	releaseData, err := ioutil.ReadFile(filename)
+	var release *pbd.Release
 	if err != nil {
 		log.Printf("Failing to read file: %v", err)
-		return nil, nil
+	} else {
+		log.Printf("Adding %v to cache", id)
+		syncer.cache[int32(id)] = filename
+		release = &pbd.Release{}
+		proto.Unmarshal(releaseData, release)
 	}
-
-	log.Printf("Adding %v to cache", id)
-	syncer.cache[int32(id)] = filename
-	release := &pbd.Release{}
-	proto.Unmarshal(releaseData, release)
-
 	metadataData, err := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
 	if err == nil {
 		metadata := &pb.ReleaseMetadata{}
