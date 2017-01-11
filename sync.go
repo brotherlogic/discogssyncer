@@ -25,7 +25,6 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	if err != nil {
 		log.Printf("Failing to read file: %v", err)
 	} else {
-		log.Printf("Adding %v to cache", id)
 		syncer.cache[int32(id)] = filename
 		release = &pbd.Release{}
 		proto.Unmarshal(releaseData, release)
