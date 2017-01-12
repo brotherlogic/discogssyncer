@@ -385,6 +385,6 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist
 	}
 
 	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
-
+	syncer.saveWantList()
 	return &syncer.wants, nil
 }
