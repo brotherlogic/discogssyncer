@@ -149,6 +149,37 @@ func TestGetWantlist(t *testing.T) {
 	}
 }
 
+func TestDeleteWantFully(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testwantlistfully")
+	syncer.SyncWantlist()
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+	log.Printf("WANTS = %v", wantlist)
+	if len(wantlist.Want) == 0 {
+		t.Errorf("No wants returned")
+	}
+
+	syncer.DeleteWant(context.Background(), &pb.Want{ReleaseId: 256})
+	wantlist, err = syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+	if len(wantlist.Want) != 1 {
+		t.Errorf("Wants returned post delete: %v", wantlist)
+	}
+
+	nsyncer := GetTestSyncerNoDelete(".testwantlistfully")
+	wantlist, err = nsyncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+	if len(wantlist.Want) != 1 {
+		t.Errorf("Wants returned on reload: %v", wantlist)
+	}
+}
+
 func TestSetWant(t *testing.T) {
 	syncer := GetTestSyncer(".testsetwant", true)
 	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
@@ -511,11 +542,12 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer.GoServer = &goserver.GoServer{}
 	syncer.SkipLog = true
 	syncer.Register = syncer
+	syncer.initWantlist()
 	return syncer
 }
 
 func GetTestSyncerNoDelete(foldername string) Syncer {
-	return GetTestSyncer(foldername, true)
+	return GetTestSyncer(foldername, false)
 }
 
 func TestGetFolderById(t *testing.T) {
