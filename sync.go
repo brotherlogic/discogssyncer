@@ -33,7 +33,6 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 	if err == nil {
 		metadata := &pb.ReleaseMetadata{}
 		proto.Unmarshal(metadataData, metadata)
-		log.Printf("Read the metadata: %v", metadata)
 		return release, metadata
 	}
 
