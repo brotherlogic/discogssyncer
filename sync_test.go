@@ -80,7 +80,7 @@ func TestSearch(t *testing.T) {
 
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
-	syncer := GetTestSyncerNoDelete(".testGetMetadata")
+	syncer := GetTestSyncer(".testGetMetadata", true)
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 	metadata, err := syncer.GetMetadata(context.Background(), release)
@@ -472,7 +472,7 @@ func TestSaveMetadata(t *testing.T) {
 }
 
 func TestUpdateMetadata(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testupdatemetadata")
+	syncer := GetTestSyncer(".testupdatemetadata", true)
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
 	syncer.saveRelease(release, 23)
 
