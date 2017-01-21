@@ -58,15 +58,16 @@ func (syncer *Syncer) Search(ctx context.Context, req *pb.SearchRequest) (*pb.Re
 	return fil, nil
 }
 
-// GetMonthlySpend gets the monthly spend
-func (syncer *Syncer) GetMonthlySpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
+// GetSpend gets the spend
+func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.SpendResponse, error) {
 	spend := 0
 	var updates []*pb.MetadataUpdate
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
 		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 		datev := time.Unix(metadata.DateAdded, 0)
-		if datev.Year() == int(req.Year) && int32(datev.Month()) == req.Month {
+		log.Printf("WE ARE HERE %v", req.Month)
+		if datev.Year() == int(req.Year) && (req.Month <= 0 || int32(datev.Month()) == req.Month) {
 			spend += int(metadata.Cost)
 			updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
 		}
