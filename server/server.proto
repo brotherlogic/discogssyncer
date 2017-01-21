@@ -85,7 +85,7 @@ service DiscogsService {
 
 				rpc RebuildWantlist(Empty) returns (Wantlist) {};
 
-				rpc GetMonthlySpend(SpendRequest) returns (SpendResponse) {};
+				rpc GetSpend(SpendRequest) returns (SpendResponse) {};
 
 				rpc EditWant(Want) returns (Want) {};
 

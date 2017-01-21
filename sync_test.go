@@ -125,12 +125,32 @@ func TestGetMonthlySpend(t *testing.T) {
 
 	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
 
-	spend, err := syncer.GetMonthlySpend(context.Background(), &pb.SpendRequest{Month: 10, Year: 1977})
+	spend, err := syncer.GetSpend(context.Background(), &pb.SpendRequest{Month: 10, Year: 1977})
 	if err != nil {
 		t.Errorf("Fail to get monthly spend: %v", err)
 	}
 	if int(spend.TotalSpend) != 200 {
 		t.Errorf("Monthly spend is miscalculated: %v", spend)
+	}
+}
+
+func TestGetYearlySpend(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetYearlySpend")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.AddToFolder(context.Background(), &pb.ReleaseMove{Release: release, NewFolderId: 23})
+	metadata, _ := syncer.GetMetadata(context.Background(), release)
+	metadata.Cost = 200
+	birthday, _ := time.Parse("02/01/06", "22/10/77")
+	metadata.DateAdded = birthday.Unix()
+
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
+
+	spend, err := syncer.GetSpend(context.Background(), &pb.SpendRequest{Year: 1977})
+	if err != nil {
+		t.Errorf("Fail to get yearly spend: %v", err)
+	}
+	if int(spend.TotalSpend) != 200 {
+		t.Errorf("Yearly spend is miscalculated: %v", spend)
 	}
 }
 
