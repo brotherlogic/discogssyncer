@@ -16,6 +16,9 @@ message ReleaseMetadata {
 
 				// The cost of the record in pence
 				int32 cost = 4;
+
+				// If we have other copies of this
+				bool others = 5;
 }
 
 message Empty {}

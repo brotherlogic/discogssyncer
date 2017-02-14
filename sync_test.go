@@ -17,8 +17,9 @@ type testDiscogsRetriever struct{}
 
 func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	var releases = make([]pbd.Release, 0)
-	releases = append(releases, pbd.Release{FolderId: 23, Id: 25})
-	releases = append(releases, pbd.Release{FolderId: 23, Id: 32})
+	releases = append(releases, pbd.Release{FolderId: 23, Id: 25, MasterId: 234})
+	releases = append(releases, pbd.Release{FolderId: 23, Id: 32, MasterId: 245})
+	releases = append(releases, pbd.Release{FolderId: 22, Id: 29, MasterId: 234})
 	return releases
 }
 
@@ -632,5 +633,19 @@ func TestSaveFolderMetaata(t *testing.T) {
 	if _, err := os.Stat(".testSaveFolderMetadata/metadata/folders"); os.IsNotExist(err) {
 		t.Errorf("Folder metedata has not been save")
 	}
+}
 
+func TestOtherCopies(t *testing.T) {
+	syncer := GetTestSyncer(".testOtherCopies", true)
+	syncer.SaveCollection(&testDiscogsRetriever{})
+
+	// Some releases should be marked as having other copies
+	relHas, meta := syncer.GetRelease(29, 22)
+	if !meta.Others {
+		t.Errorf("%v has not been marked as having others: %v", relHas, meta)
+	}
+	relHasnot, meta := syncer.GetRelease(32, 23)
+	if meta.Others {
+		t.Errorf("%v has actually been marked as having others: %v", relHasnot, meta)
+	}
 }
