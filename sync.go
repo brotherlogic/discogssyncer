@@ -145,13 +145,33 @@ func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, 
 // SaveCollection writes out the full collection to files.
 func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
+	masterMap := make(map[int32][]int32)
 	for _, release := range releases {
 		fullRelease, _ := retr.GetRelease(int(release.Id))
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
+		fullRelease.MasterId = release.MasterId
 		syncer.saveRelease(&fullRelease, int(release.FolderId))
+		if _, ok := masterMap[fullRelease.MasterId]; ok {
+			masterMap[fullRelease.MasterId] = append(masterMap[fullRelease.MasterId], fullRelease.Id)
+		} else {
+			masterMap[fullRelease.MasterId] = []int32{fullRelease.Id}
+		}
 	}
+
+	//Process out the multi release map
+	log.Printf("META MAP: %v", masterMap)
+	for _, value := range masterMap {
+		if len(value) > 1 {
+			for _, rel := range value {
+				meta, _ := syncer.GetMetadata(context.Background(), &godiscogs.Release{Id: rel})
+				meta.Others = true
+				syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
+			}
+		}
+	}
+
 	folders := retr.GetFolders()
 	folderList := pb.FolderList{}
 	for i := range folders {
