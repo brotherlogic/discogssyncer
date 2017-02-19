@@ -91,15 +91,17 @@ func main() {
 	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
+	var verbose = flag.Bool("verbose", false, "Show all output")
 	flag.Parse()
 	retr := godiscogs.NewDiscogsRetriever(*token)
 	syncer := InitServer(token, folder, retr)
 
 	if *sync {
 		//Turn off logging
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
-
+		if !*verbose {
+			log.SetFlags(0)
+			log.SetOutput(ioutil.Discard)
+		}
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
 		syncer.SyncWantlist()
