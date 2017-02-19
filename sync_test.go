@@ -20,6 +20,8 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	releases = append(releases, pbd.Release{FolderId: 23, Id: 25, MasterId: 234})
 	releases = append(releases, pbd.Release{FolderId: 23, Id: 32, MasterId: 245})
 	releases = append(releases, pbd.Release{FolderId: 22, Id: 29, MasterId: 234})
+	releases = append(releases, pbd.Release{FolderId: 22, Id: 65})
+	releases = append(releases, pbd.Release{FolderId: 22, Id: 79})
 	return releases
 }
 
@@ -638,14 +640,22 @@ func TestSaveFolderMetaata(t *testing.T) {
 func TestOtherCopies(t *testing.T) {
 	syncer := GetTestSyncer(".testOtherCopies", true)
 	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection(&testDiscogsRetriever{})
 
 	// Some releases should be marked as having other copies
 	relHas, meta := syncer.GetRelease(29, 22)
+	log.Printf("META1 = %v", meta)
 	if !meta.Others {
 		t.Errorf("%v has not been marked as having others: %v", relHas, meta)
 	}
 	relHasnot, meta := syncer.GetRelease(32, 23)
+	log.Printf("META2 = %v", meta)
 	if meta.Others {
 		t.Errorf("%v has actually been marked as having others: %v", relHasnot, meta)
+	}
+	relNoParent, meta := syncer.GetRelease(65, 22)
+	log.Printf("META3 = %v", meta)
+	if meta.Others {
+		t.Errorf("%v has actually been marked as having others: %v", relNoParent, meta)
 	}
 }
