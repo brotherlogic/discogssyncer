@@ -303,6 +303,11 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 
 	proto.Merge(metadata, in.Update)
 
+	// Manual set of boolean fields
+	if !in.Update.Others {
+		metadata.Others = false
+	}
+
 	metadataRoot := syncer.saveLocation + "/static-metadata/"
 	metadataPath := metadataRoot + strconv.Itoa(int(in.Release.Id)) + ".metadata"
 	data, _ := proto.Marshal(metadata)
