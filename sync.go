@@ -170,6 +170,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 			} else {
 				meta.Others = false
 			}
+			log.Printf("Updating %v with %v", rel, meta)
 			syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
 		}
 	}
