@@ -151,7 +151,6 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
-		fullRelease.MasterId = release.MasterId
 		syncer.saveRelease(&fullRelease, int(release.FolderId))
 		if _, ok := masterMap[fullRelease.MasterId]; ok {
 			masterMap[fullRelease.MasterId] = append(masterMap[fullRelease.MasterId], fullRelease.Id)
