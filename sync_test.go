@@ -26,7 +26,12 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 }
 
 func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
-	return pbd.Release{Id: int32(id)}, nil
+	if id == 25 || id == 29{
+	return pbd.Release{Id: int32(id), MasterId: int32(234)}, nil
+} else if id == 32 {
+	return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
+}
+return pbd.Release{Id: int32(id)}, nil
 }
 
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
