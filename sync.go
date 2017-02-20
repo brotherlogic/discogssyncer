@@ -163,12 +163,14 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	//Process out the multi release map
 	log.Printf("META MAP: %v", masterMap)
 	for key, value := range masterMap {
-		if key != 0 && len(value) > 1 {
-			for _, rel := range value {
-				meta, _ := syncer.GetMetadata(context.Background(), &godiscogs.Release{Id: rel})
+		for _, rel := range value {
+			meta, _ := syncer.GetMetadata(context.Background(), &godiscogs.Release{Id: rel})
+			if key != 0 && len(value) > 1 {
 				meta.Others = true
-				syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
+			} else {
+				meta.Others = false
 			}
+			syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
 		}
 	}
 
