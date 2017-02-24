@@ -40,8 +40,10 @@ func (s *Syncer) initWantlist() {
 	proto.Unmarshal(wldata, &s.wants)
 
 	for _, want := range s.wants.Want {
-		rel, _ := s.GetRelease(int(want.ReleaseId), -5)
-		rel.FolderId = -5
+		rel, err := s.GetRelease(int(want.ReleaseId), -5)
+		if err != nil {
+			rel.FolderId = -5
+		}
 	}
 }
 
