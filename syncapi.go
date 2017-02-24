@@ -41,7 +41,7 @@ func (s *Syncer) initWantlist() {
 
 	for _, want := range s.wants.Want {
 		rel, err := s.GetRelease(int(want.ReleaseId), -5)
-		if err != nil {
+		if err != nil && rel != nil {
 			rel.FolderId = -5
 		}
 	}
