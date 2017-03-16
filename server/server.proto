@@ -54,6 +54,8 @@ message Wantlist {
 message SpendRequest {
 	int32 month = 1;
 	int32 year = 2;
+	int64 lower = 3;
+	int64 upper = 4;
 }
 
 message SpendResponse {
