@@ -26,12 +26,12 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 }
 
 func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
-	if id == 25 || id == 29{
-	return pbd.Release{Id: int32(id), MasterId: int32(234)}, nil
-} else if id == 32 {
-	return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
-}
-return pbd.Release{Id: int32(id)}, nil
+	if id == 25 || id == 29 {
+		return pbd.Release{Id: int32(id), MasterId: int32(234)}, nil
+	} else if id == 32 {
+		return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
+	}
+	return pbd.Release{Id: int32(id)}, nil
 }
 
 func (testDiscogsRetriever) GetFolders() []pbd.Folder {
@@ -159,6 +159,34 @@ func TestGetYearlySpend(t *testing.T) {
 	}
 	if int(spend.TotalSpend) != 200 {
 		t.Errorf("Yearly spend is miscalculated: %v", spend)
+	}
+}
+
+func TestGetBoundSpend(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetYearlySpend")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.AddToFolder(context.Background(), &pb.ReleaseMove{Release: release, NewFolderId: 23})
+	metadata, _ := syncer.GetMetadata(context.Background(), release)
+	metadata.Cost = 200
+	birthday, _ := time.Parse("02/01/06", "22/10/77")
+	metadata.DateAdded = birthday.Unix()
+
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
+
+	spend, err := syncer.GetSpend(context.Background(), &pb.SpendRequest{Lower: birthday.Unix() - 1, Upper: birthday.Unix() + 1})
+	if err != nil {
+		t.Errorf("Fail to get yearly spend: %v", err)
+	}
+	if int(spend.TotalSpend) != 200 {
+		t.Errorf("Bound spend is miscalculated: %v", spend)
+	}
+
+	spend, err = syncer.GetSpend(context.Background(), &pb.SpendRequest{Lower: birthday.Unix() + 1, Upper: birthday.Unix() + 2})
+	if err != nil {
+		t.Errorf("Fail to get yearly spend: %v", err)
+	}
+	if int(spend.TotalSpend) != 0 {
+		t.Errorf("Bound spend should be zero: %v", spend)
 	}
 }
 

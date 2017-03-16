@@ -67,7 +67,9 @@ func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.S
 		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
 		datev := time.Unix(metadata.DateAdded, 0)
 		log.Printf("WE ARE HERE %v", req.Month)
-		if datev.Year() == int(req.Year) && (req.Month <= 0 || int32(datev.Month()) == req.Month) {
+		log.Printf("%v -> %v", req.Lower, req.Upper)
+		log.Printf("%v", metadata.DateAdded)
+		if (req.Year <= 0 || datev.Year() == int(req.Year)) && (req.Month <= 0 || int32(datev.Month()) == req.Month) && (req.Lower <= 0 || (metadata.DateAdded >= req.Lower && metadata.DateAdded <= req.Upper)) {
 			spend += int(metadata.Cost)
 			updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
 		}
