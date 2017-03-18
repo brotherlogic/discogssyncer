@@ -205,6 +205,31 @@ func TestGetWantlist(t *testing.T) {
 	}
 }
 
+func TestAddWant(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testaddwant")
+
+	_, err := syncer.AddWant(context.Background(), &pb.Want{ReleaseId: 66})
+	if err != nil {
+		t.Errorf("Error adding want: %v", err)
+	}
+
+	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Error getting wantlist: %v", err)
+	}
+
+	found := false
+	for _, want := range wantlist.Want {
+		if want.ReleaseId == 66 {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("Failure to find want: %v", wantlist)
+	}
+}
+
 func TestDeleteWantFully(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testwantlistfully")
 	syncer.SyncWantlist()
