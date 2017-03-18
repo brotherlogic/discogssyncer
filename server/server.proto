@@ -95,4 +95,6 @@ service DiscogsService {
 				rpc EditWant(Want) returns (Want) {};
 
 				rpc DeleteWant(Want) returns (Wantlist) {};
+
+				rpc AddWant(Want) returns (Empty) {};
 }

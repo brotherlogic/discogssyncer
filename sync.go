@@ -78,6 +78,22 @@ func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.S
 	return &pb.SpendResponse{TotalSpend: int32(spend), Spends: updates}, nil
 }
 
+// AddWant adds a want to our list
+func (syncer *Syncer) AddWant(ctx context.Context, req *pb.Want) (*pb.Empty, error) {
+	//Add the want to discogs
+	syncer.retr.AddToWantlist(int(req.ReleaseId))
+
+	//Save and store the want
+	release, _ := syncer.retr.GetRelease(int(req.ReleaseId))
+	syncer.saveRelease(&release, -5)
+
+	//Add the want internally
+	syncer.wants.Want = append(syncer.wants.Want, req)
+	syncer.saveWantList()
+
+	return &pb.Empty{}, nil
+}
+
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	log.Printf("SAVING METADATA: %v", rel)
 	metadataRoot := syncer.saveLocation + "/static-metadata/"
