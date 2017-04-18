@@ -89,6 +89,11 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 	return syncer
 }
 
+// ReportHealth alerts if we're not healthy
+func (s Syncer) ReportHealth() bool {
+	return true
+}
+
 func main() {
 	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
