@@ -165,7 +165,10 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	releases := retr.GetCollection()
 	masterMap := make(map[int32][]int32)
 	for _, release := range releases {
-		fullRelease, _ := retr.GetRelease(int(release.Id))
+		fullRelease, err := retr.GetRelease(int(release.Id))
+		if err != nil {
+			log.Printf("ERROR in SaveCollection: %v for release %v", err, release)
+		}
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
