@@ -132,6 +132,7 @@ func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
 	}
 
 	data, _ := proto.Marshal(rel)
+	log.Printf("SAVING RELEASE %v", rel)
 	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
 	syncer.saveMetadata(rel)
 }
