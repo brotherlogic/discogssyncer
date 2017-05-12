@@ -167,6 +167,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	masterMap := make(map[int32][]int32)
 	for _, release := range releases {
 		fullRelease, err := retr.GetRelease(int(release.Id))
+		log.Printf("PULL RELEASE %v from %v", fullRelease, release.Id)
 		if err != nil {
 			log.Printf("ERROR in SaveCollection: %v for release %v", err, release)
 		}
