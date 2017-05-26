@@ -32,11 +32,4 @@ running = len(os.popen('ps -ef | grep ' + name).readlines()) > 3
 if size_1 != size_2 or new_hash != current_hash or not running:
     for line in os.popen('killall ' + name).readlines():
         pass
-    for line in os.popen('cp out.txt out-' + `time.time()`).readlines():
-        pass
-    with open('out.txt', 'w') as output:
-        server = subprocess.Popen(['./' + name, '--sync=false', '--token=' + sys.argv[1]], stdout=output, stderr=output)
-        out, err = server.communicate()
-        output.write("%r" % out)
-        output.write("%r" % err)
-        output.write("%r" % server.returncode)
+    subprocess.Popen(['./' + name, '--sync=false', '--token=' + sys.argv[1]], stdout=output, stderr=output)
