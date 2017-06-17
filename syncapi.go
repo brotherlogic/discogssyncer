@@ -89,6 +89,11 @@ func InitServer(token *string, folder *string, retr saver) Syncer {
 	return syncer
 }
 
+// Mote promotes/demotes this server
+func (s Syncer) Mote(master bool) error {
+	return nil
+}
+
 // ReportHealth alerts if we're not healthy
 func (s Syncer) ReportHealth() bool {
 	return true
@@ -98,17 +103,18 @@ func main() {
 	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
-	var verbose = flag.Bool("verbose", false, "Show all output")
+	var quiet = flag.Bool("quiet", true, "Show all output")
 	flag.Parse()
 	retr := godiscogs.NewDiscogsRetriever(*token)
 	syncer := InitServer(token, folder, retr)
 
+	//Turn off logging
+	if *quiet {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
+
 	if *sync {
-		//Turn off logging
-		if !*verbose {
-			log.SetFlags(0)
-			log.SetOutput(ioutil.Discard)
-		}
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
 		syncer.SyncWantlist()
