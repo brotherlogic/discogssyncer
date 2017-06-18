@@ -167,10 +167,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	masterMap := make(map[int32][]int32)
 	for _, release := range releases {
 		fullRelease, err := retr.GetRelease(int(release.Id))
-		log.Printf("PULL RELEASE %v from %v", fullRelease, release.Id)
-		if err != nil {
-			log.Printf("ERROR in SaveCollection: %v for release %v", err, release)
-		}
+		log.Printf("PULL RELEASE %v from %v with %v", fullRelease, release.Id, err)
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
@@ -378,8 +375,10 @@ func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
 			filename := syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name()
 			data, _ := ioutil.ReadFile(filename)
 			release := &pbd.Release{}
-			proto.Unmarshal(data, release)
-			syncer.cache[release.Id] = filename
+			err := proto.Unmarshal(data, release)
+			if err == nil {
+				syncer.cache[release.Id] = filename
+			}
 			releases.Releases = append(releases.Releases, release)
 		}
 	}
