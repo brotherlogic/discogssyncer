@@ -70,7 +70,11 @@ func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.S
 		log.Printf("%v -> %v", req.Lower, req.Upper)
 		log.Printf("%v", metadata.DateAdded)
 		if (req.Year <= 0 || datev.Year() == int(req.Year)) && (req.Month <= 0 || int32(datev.Month()) == req.Month) && (req.Lower <= 0 || (metadata.DateAdded >= req.Lower && metadata.DateAdded <= req.Upper)) {
-			spend += int(metadata.Cost)
+			if metadata.Cost == 0 {
+				spend += 3000
+			} else {
+				spend += int(metadata.Cost)
+			}
 			updates = append(updates, &pb.MetadataUpdate{Release: rel, Update: metadata})
 		}
 	}
