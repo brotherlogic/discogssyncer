@@ -142,6 +142,26 @@ func TestGetMonthlySpend(t *testing.T) {
 	}
 }
 
+func TestGetUncostedSpend(t *testing.T) {
+	syncer := GetTestSyncerNoDelete(".testGetUncostedSpend")
+	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
+	syncer.AddToFolder(context.Background(), &pb.ReleaseMove{Release: release, NewFolderId: 23})
+	metadata, _ := syncer.GetMetadata(context.Background(), release)
+	birthday, _ := time.Parse("02/01/06", "22/10/77")
+	metadata.DateAdded = birthday.Unix()
+
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: release, Update: metadata})
+
+	spend, err := syncer.GetSpend(context.Background(), &pb.SpendRequest{Month: 10, Year: 1977})
+	if err != nil {
+		t.Errorf("Fail to get monthly spend: %v", err)
+	}
+	//Uncosted spend should be 30 dollars
+	if int(spend.TotalSpend) != 3000 {
+		t.Errorf("Monthly spend is miscalculated(%v): %v", spend.TotalSpend, spend)
+	}
+}
+
 func TestGetYearlySpend(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testGetYearlySpend")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
