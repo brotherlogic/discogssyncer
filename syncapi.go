@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/brotherlogic/goserver"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"os"
 	"strings"
@@ -54,19 +52,6 @@ func (s *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
 // DoRegister does RPC registration
 func (s Syncer) DoRegister(server *grpc.Server) {
 	pb.RegisterDiscogsServiceServer(server, &s)
-}
-
-// MoveToFolder moves a release to the specified folder
-func (s *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
-	s.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
-	oldFolder := int(in.Release.FolderId)
-	fullRelease, _ := s.retr.GetRelease(int(in.Release.Id))
-	fullRelease.FolderId = int32(in.NewFolderId)
-
-	s.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
-	s.saveRelease(&fullRelease, int(in.NewFolderId))
-	s.deleteRelease(&fullRelease, oldFolder)
-	return &pb.Empty{}, nil
 }
 
 func doDelete(path string, f os.FileInfo, err error) error {

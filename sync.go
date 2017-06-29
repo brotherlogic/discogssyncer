@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -40,6 +41,33 @@ func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseM
 
 	// We have no metadata for this release
 	return release, nil
+}
+
+// MoveToFolder moves a release to the specified folder
+func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
+
+	//Before doing anything check that the new folder exists
+	legit := false
+	for _, f := range syncer.getFolders().Folders {
+		if f.Id == in.NewFolderId {
+			legit = true
+		}
+	}
+
+	if !legit {
+		return nil, errors.New("Unable to locate folder with id " + strconv.Itoa(int(in.NewFolderId)))
+	}
+
+	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
+	oldFolder := int(in.Release.FolderId)
+	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
+	fullRelease.FolderId = int32(in.NewFolderId)
+
+	log.Printf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId)
+	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
+	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	syncer.deleteRelease(&fullRelease, oldFolder)
+	return &pb.Empty{}, nil
 }
 
 func match(query string, str string) bool {

@@ -737,3 +737,26 @@ func TestOtherCopies(t *testing.T) {
 		t.Errorf("%v has actually been marked as having others: %v", relNoParent, meta)
 	}
 }
+
+func TestSimpleMove(t *testing.T) {
+	syncer := GetTestSyncer(".testSimpleMove", true)
+	syncer.SaveCollection(&testDiscogsRetriever{})
+
+	syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 23, Release: &pbd.Release{Id: 79, FolderId: 22}})
+
+	r, _ := syncer.GetRelease(79, 23)
+	if r == nil || r.FolderId != 23 {
+		t.Errorf("Error moving record: %v", r)
+	}
+}
+
+func TestFalseMove(t *testing.T) {
+	syncer := GetTestSyncer(".testSimpleMove", true)
+	syncer.SaveCollection(&testDiscogsRetriever{})
+
+	v, err := syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 2399, Release: &pbd.Release{Id: 79, FolderId: 22}})
+
+	if err == nil {
+		t.Errorf("Bad move has not failed: %v", v)
+	}
+}
