@@ -108,20 +108,6 @@ func TestGetMetadata(t *testing.T) {
 	}
 }
 
-func TestGetMetadataFailWithNoMetadata(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testGetMetadataFailWithNo")
-	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
-	syncer.saveRelease(release, 23)
-
-	//Force delete the metadata
-	os.Remove(".testGetMetadataFailWithNo/static-metadata/25.metadata")
-
-	metadata, err := syncer.GetMetadata(context.Background(), release)
-	if err == nil {
-		t.Errorf("Error in get metadata, should have errored : %v", metadata)
-	}
-}
-
 func TestGetMonthlySpend(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testGetMetadata")
 	release := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 37}
@@ -211,8 +197,8 @@ func TestGetBoundSpend(t *testing.T) {
 }
 
 func TestGetWantlist(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testwantlist")
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 25})
+	syncer := GetTestSyncer(".testwantlist", true)
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 25})
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 
@@ -251,7 +237,7 @@ func TestAddWant(t *testing.T) {
 }
 
 func TestDeleteWantFully(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testwantlistfully")
+	syncer := GetTestSyncer(".testwantlistfully", true)
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -283,7 +269,7 @@ func TestDeleteWantFully(t *testing.T) {
 
 func TestSetWant(t *testing.T) {
 	syncer := GetTestSyncer(".testsetwant", true)
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 256, Wanted: true})
 
 	wantedit := &pb.Want{ReleaseId: 256, Valued: true}
 	syncer.EditWant(context.Background(), wantedit)
@@ -342,9 +328,9 @@ func TestSaveWantDoesNotSaveMetadata(t *testing.T) {
 }
 
 func TestCollapseWantlist(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testcollapsewants")
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 257, Valued: true, Wanted: true})
+	syncer := GetTestSyncer(".testcollapsewants", true)
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 257, Valued: true, Wanted: true})
 	syncer.SyncWantlist()
 	wantlist, err := syncer.GetWantlist(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -379,7 +365,7 @@ func TestCollapseWantlist(t *testing.T) {
 
 func TestDeleteWant(t *testing.T) {
 	syncer := GetTestSyncer(".testsetwant", true)
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 256, Wanted: true})
 
 	deleteWant := &pb.Want{ReleaseId: 256}
 	syncer.DeleteWant(context.Background(), deleteWant)
@@ -448,7 +434,7 @@ func TestGetReleaseGetsWantlist(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error in adding release: %v", err)
 	}
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 256, Wanted: true})
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 256, Wanted: true})
 	syncer.SyncWantlist()
 
 	// Retrieve a want directly
@@ -470,13 +456,8 @@ func TestGetReleaseFail(t *testing.T) {
 	}
 }
 
-func TestSaveCollection(t *testing.T) {
-	syncer := Syncer{saveLocation: ".testcollectionsave/"}
-	syncer.SaveCollection(&testDiscogsRetriever{})
-}
-
-func TestGetCollection(t *testing.T) {
-	syncer := Syncer{saveLocation: ".testcollectionsave/", cache: make(map[int32]string)}
+func TestGetCollectionVanilla(t *testing.T) {
+	syncer := GetTestSyncer(".testGetCollection", true)
 	syncer.SaveCollection(&testDiscogsRetriever{})
 
 	releases, err := syncer.GetCollection(context.Background(), &pb.Empty{})
@@ -489,7 +470,7 @@ func TestGetCollection(t *testing.T) {
 	}
 
 	folders := syncer.getFolders()
-	if len(folders.Folders) != 2 {
+	if len(folders.Folders) != 3 {
 		t.Errorf("Not enough folders: %v", folders)
 	}
 
@@ -500,7 +481,7 @@ func TestGetCollection(t *testing.T) {
 
 func TestGetCollectionNoWantlist(t *testing.T) {
 	syncer := GetTestSyncer(".testcollectionnowantlist", true)
-	syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: 56})
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 56})
 	syncer.SyncWantlist()
 	syncer.SaveCollection(&testDiscogsRetriever{})
 
@@ -520,7 +501,7 @@ func TestGetCollectionNoWantlist(t *testing.T) {
 }
 
 func TestRetrieveEmptyCollection(t *testing.T) {
-	syncer := Syncer{saveLocation: ".testemptyfolder/"}
+	syncer := GetTestSyncer(".testemptyfolder", true)
 	folderList := &pb.FolderList{}
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 	rels, err := syncer.GetReleasesInFolder(context.Background(), folderList)
@@ -529,20 +510,9 @@ func TestRetrieveEmptyCollection(t *testing.T) {
 	}
 }
 
-func TestSaveLocation(t *testing.T) {
-	syncer := Syncer{saveLocation: ".testfolder/"}
-	release := &pbd.Release{Id: 1234}
-	syncer.saveRelease(release, 12)
-
-	//Check that the file is in the right location
-	if _, err := os.Stat(".testfolder/12/1234.release"); os.IsNotExist(err) {
-		t.Errorf("File does not exists")
-	}
-}
-
 func TestSaveMetadata(t *testing.T) {
 	now := time.Now()
-	syncer := Syncer{saveLocation: ".testmetadatasave/", cache: make(map[int32]string)}
+	syncer := GetTestSyncer(".testmetadatasave/", true)
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 12)
 
@@ -612,7 +582,7 @@ func TestUpdateRating(t *testing.T) {
 
 func TestSaveAndRefreshMetadata(t *testing.T) {
 	now := time.Now()
-	syncer := Syncer{saveLocation: ".testmetadatasave/", cache: make(map[int32]string)}
+	syncer := GetTestSyncer(".testmetadatasave/", true)
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 12)
 
@@ -620,12 +590,13 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 	if metadata.DateAdded > now.Unix() {
 		t.Errorf("Metadata is prior to adding the release: %v (%v)", metadata.DateAdded, metadata.DateAdded-now.Unix())
 	}
+	ot := metadata.DateRefreshed
 
 	time.Sleep(time.Second)
 	syncer.saveRelease(release, 12)
 	_, metadata2 := syncer.GetRelease(1234, 12)
-	if metadata2.DateRefreshed == metadata.DateRefreshed {
-		t.Errorf("Metadata has not been refreshed: %v and %v", metadata.DateRefreshed, metadata2.DateRefreshed)
+	if metadata2.DateRefreshed == ot {
+		t.Errorf("Metadata has not been refreshed: %v and %v given %v", ot, metadata2.DateRefreshed, metadata.DateAdded)
 	}
 }
 
@@ -633,7 +604,7 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
 		saveLocation: foldername,
 		retr:         testDiscogsRetriever{},
-		cache:        make(map[int32]string),
+		collection:   &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
 	}
 
 	if delete {
@@ -643,8 +614,20 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer.GoServer = &goserver.GoServer{}
 	syncer.SkipLog = true
 	syncer.Register = syncer
-	syncer.initWantlist()
+
+	syncer.readRecordCollection()
+
 	return syncer
+}
+
+func TestGetEmptyFolderReleaseGet(t *testing.T) {
+	syncer := GetTestSyncer(".testblah", true)
+	syncer.saveCollection()
+
+	f := syncer.getReleases(1234)
+	if f != nil {
+		t.Errorf("Made up folder came back non nil: %v", f)
+	}
 }
 
 func GetTestSyncerNoDelete(foldername string) Syncer {
@@ -655,7 +638,6 @@ func TestGetFolderById(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testgetfolders/")
 	folders := &pb.FolderList{}
 	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
-	syncer.SaveFolders(folders)
 
 	release := &pbd.Release{Id: 1234}
 	syncer.saveRelease(release, 1234)
@@ -668,50 +650,6 @@ func TestGetFolderById(t *testing.T) {
 	}
 	if len(releases.Releases) != 1 {
 		t.Errorf("Bad retrieve of releases: %v", releases)
-	}
-}
-
-func TestGetFolders(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testgetfolders/")
-	folders := &pb.FolderList{}
-	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
-	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestTwo", Id: 1235})
-	syncer.SaveFolders(folders)
-
-	release := &pbd.Release{Id: 1234}
-	syncer.saveRelease(release, 1234)
-
-	folderList := &pb.FolderList{}
-	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne"})
-	releases, err := syncer.GetReleasesInFolder(context.Background(), folderList)
-
-	folderList2 := &pb.FolderList{}
-	folderList2.Folders = append(folderList2.Folders, &pbd.Folder{Name: "TestTwo"})
-	releases2, _ := syncer.GetReleasesInFolder(context.Background(), folderList2)
-
-	if err != nil {
-		t.Errorf("Error retrieveing releases: %v", err)
-	}
-
-	if len(releases.Releases) == 0 {
-		t.Errorf("GetReleasesInFolder came back empty")
-	}
-
-	if len(releases2.Releases) != 0 {
-		t.Errorf("Releases returned for folder 2: %v", releases2)
-	}
-}
-
-func TestSaveFolderMetaata(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testSaveFolderMetadata/")
-	folderList := &pb.FolderList{}
-	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
-	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestTwo", Id: 1232})
-
-	syncer.SaveFolders(folderList)
-
-	if _, err := os.Stat(".testSaveFolderMetadata/metadata/folders"); os.IsNotExist(err) {
-		t.Errorf("Folder metedata has not been save")
 	}
 }
 
@@ -742,7 +680,11 @@ func TestSimpleMove(t *testing.T) {
 	syncer := GetTestSyncer(".testSimpleMove", true)
 	syncer.SaveCollection(&testDiscogsRetriever{})
 
-	syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 23, Release: &pbd.Release{Id: 79, FolderId: 22}})
+	_, err := syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 23, Release: &pbd.Release{Id: 79, FolderId: 22}})
+
+	if err != nil {
+		log.Fatalf("Error in move: %v", err)
+	}
 
 	r, _ := syncer.GetRelease(79, 23)
 	if r == nil || r.FolderId != 23 {

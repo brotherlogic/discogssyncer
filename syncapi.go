@@ -4,18 +4,15 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/brotherlogic/goserver"
 	"github.com/golang/protobuf/proto"
 
 	"os"
-	"strings"
 
 	pb "github.com/brotherlogic/discogssyncer/server"
-	"github.com/brotherlogic/godiscogs"
+	pbd "github.com/brotherlogic/godiscogs"
 	"google.golang.org/grpc"
 )
 
@@ -25,28 +22,55 @@ type Syncer struct {
 	saveLocation string
 	token        string
 	retr         saver
-	wants        pb.Wantlist
-	cache        map[int32]string
+	collection   *pb.RecordCollection
 }
 
 var (
 	syncTime int64
 )
 
-func (s *Syncer) initWantlist() {
-	wldata, _ := ioutil.ReadFile(s.saveLocation + "/metadata/wantlist")
-	proto.Unmarshal(wldata, &s.wants)
-
-	for _, want := range s.wants.Want {
-		rel, err := s.GetRelease(int(want.ReleaseId), -5)
-		if err != nil && rel != nil {
-			rel.FolderId = -5
-		}
+// This is the only method that interacts with disk
+func (s *Syncer) readRecordCollection() {
+	log.Printf("Reading collection")
+	savePath := s.saveLocation + "/collection"
+	if _, err := os.Stat(savePath); os.IsNotExist(err) {
+		log.Printf("No collection exists!")
+	} else {
+		data, _ := ioutil.ReadFile(savePath)
+		proto.Unmarshal(data, s.collection)
 	}
+
+	log.Printf("READ %v", s.collection)
 }
 
-func (s *Syncer) deleteRelease(rel *godiscogs.Release, folder int) {
-	os.Remove(s.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(int(rel.Id)) + ".release")
+func (s *Syncer) saveCollection() {
+	log.Printf("SAVE: %v", s.collection)
+
+	//Place holder for collection save
+	savePath := s.saveLocation + "/collection"
+	if _, err := os.Stat(s.saveLocation); os.IsNotExist(err) {
+		os.MkdirAll(s.saveLocation, 0777)
+	}
+	data, _ := proto.Marshal(s.collection)
+	ioutil.WriteFile(savePath, data, 0644)
+}
+
+func (s *Syncer) deleteRelease(rel *pbd.Release, folder int32) {
+	index := -1
+	for _, f := range s.collection.Folders {
+		if f.Folder.Id == folder {
+			for i, r := range f.Releases.Releases {
+				if r.Id == rel.Id {
+					index = i
+				}
+
+			}
+			if index >= 0 {
+				f.Releases.Releases = append(f.Releases.Releases[:index], f.Releases.Releases[index+1:]...)
+			}
+		}
+	}
+
 }
 
 // DoRegister does RPC registration
@@ -54,21 +78,9 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 	pb.RegisterDiscogsServiceServer(server, &s)
 }
 
-func doDelete(path string, f os.FileInfo, err error) error {
-	if !strings.Contains(path, "metadata/") && !f.IsDir() && f.ModTime().Unix() < syncTime {
-		return os.Remove(path)
-	}
-	return nil
-}
-
-func (s Syncer) clean() {
-	filepath.Walk(s.saveLocation, doDelete)
-}
-
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, pb.Wantlist{}, make(map[int32]string)}
-	syncer.initWantlist()
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, &pb.RecordCollection{}}
 	syncer.Register = syncer
 
 	return syncer
@@ -90,7 +102,7 @@ func main() {
 	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
 	var quiet = flag.Bool("quiet", true, "Show all output")
 	flag.Parse()
-	retr := godiscogs.NewDiscogsRetriever(*token)
+	retr := pbd.NewDiscogsRetriever(*token)
 	syncer := InitServer(token, folder, retr)
 
 	//Turn off logging
@@ -103,7 +115,6 @@ func main() {
 		syncTime = time.Now().Unix()
 		syncer.SaveCollection(retr)
 		syncer.SyncWantlist()
-		syncer.clean()
 	} else {
 		syncer.PrepServer()
 		syncer.RegisterServer("discogssyncer", false)

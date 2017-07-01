@@ -3,9 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -19,36 +17,36 @@ import (
 )
 
 // GetRelease Gets the release and metadata for the release
-func (syncer *Syncer) GetRelease(id int, folder int) (*pbd.Release, *pb.ReleaseMetadata) {
-	filename := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/" + strconv.Itoa(id) + ".release"
-	releaseData, err := ioutil.ReadFile(filename)
+func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.ReleaseMetadata) {
 	var release *pbd.Release
-	if err != nil {
-		log.Printf("Failing to read file: %v", err)
-	} else {
-		syncer.cache[int32(id)] = filename
-		release = &pbd.Release{}
-		proto.Unmarshal(releaseData, release)
+	var metadata *pb.ReleaseMetadata
+	for _, f := range syncer.collection.Folders {
+		if f.Folder.Id == folder {
+			for _, r := range f.Releases.Releases {
+				if r.Id == id {
+					release = r
+				}
+			}
+		}
 	}
-	metadataData, err := ioutil.ReadFile(syncer.saveLocation + "/static-metadata/" + strconv.Itoa(id) + ".metadata")
-	if err == nil {
-		metadata := &pb.ReleaseMetadata{}
-		proto.Unmarshal(metadataData, metadata)
-		return release, metadata
+	for _, m := range syncer.collection.Metadata {
+		if m.Id == id {
+			metadata = m
+		}
 	}
-
-	log.Printf("Error in reading metadata: %v", err)
-
-	// We have no metadata for this release
-	return release, nil
+	return release, metadata
 }
 
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 
+	log.Printf("MOVE TO FOLDER: %v", in)
+	log.Printf("Current folders: %v", syncer.collection.Folders)
+
 	//Before doing anything check that the new folder exists
 	legit := false
 	for _, f := range syncer.getFolders().Folders {
+		log.Printf("FOLDER = %v", f)
 		if f.Id == in.NewFolderId {
 			legit = true
 		}
@@ -59,13 +57,13 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 	}
 
 	syncer.retr.MoveToFolder(int(in.Release.FolderId), int(in.Release.Id), int(in.Release.InstanceId), int(in.NewFolderId))
-	oldFolder := int(in.Release.FolderId)
+	oldFolder := in.Release.FolderId
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 
 	log.Printf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId)
 	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
-	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	syncer.saveRelease(&fullRelease, in.NewFolderId)
 	syncer.deleteRelease(&fullRelease, oldFolder)
 	return &pb.Empty{}, nil
 }
@@ -77,6 +75,7 @@ func match(query string, str string) bool {
 // Search performs a search of the database
 func (syncer *Syncer) Search(ctx context.Context, req *pb.SearchRequest) (*pb.ReleaseList, error) {
 	all, _ := syncer.GetCollection(ctx, &pb.Empty{})
+	log.Printf("Running over collection: %v", all)
 	fil := &pb.ReleaseList{}
 	for _, rel := range all.Releases {
 		if match(req.Query, rel.Title) || match(req.Query, pbd.GetReleaseArtist(*rel)) {
@@ -92,7 +91,7 @@ func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.S
 	var updates []*pb.MetadataUpdate
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
-		_, metadata := syncer.GetRelease(int(rel.Id), int(rel.FolderId))
+		_, metadata := syncer.GetRelease(rel.Id, rel.FolderId)
 		datev := time.Unix(metadata.DateAdded, 0)
 		log.Printf("WE ARE HERE %v", req.Month)
 		log.Printf("%v -> %v", req.Lower, req.Upper)
@@ -120,52 +119,69 @@ func (syncer *Syncer) AddWant(ctx context.Context, req *pb.Want) (*pb.Empty, err
 	syncer.saveRelease(&release, -5)
 
 	//Add the want internally
-	syncer.wants.Want = append(syncer.wants.Want, req)
-	syncer.saveWantList()
-
+	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, req)
 	return &pb.Empty{}, nil
 }
 
 func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	log.Printf("SAVING METADATA: %v", rel)
-	metadataRoot := syncer.saveLocation + "/static-metadata/"
-	metadataPath := metadataRoot + strconv.Itoa(int(rel.Id)) + ".metadata"
-	if _, err := os.Stat(metadataRoot); os.IsNotExist(err) {
-		os.MkdirAll(metadataRoot, 0777)
-	}
-
 	metadata := &pb.ReleaseMetadata{}
-	if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-		// Only set the date added if this isn't a want
-		if rel.FolderId >= 0 {
-			metadata.DateAdded = time.Now().Unix()
-		}
-		metadata.DateRefreshed = time.Now().Unix()
-	} else {
-		data, _ := ioutil.ReadFile(metadataPath)
-		proto.Unmarshal(data, metadata)
-		metadata.DateRefreshed = time.Now().Unix()
 
-		//Set the data added if this is not a want
-		if rel.FolderId >= 0 && metadata.DateAdded <= 0 {
-			metadata.DateAdded = time.Now().Unix()
+	index := -1
+	for i, m := range syncer.collection.Metadata {
+		if m.Id == rel.Id {
+			metadata = m
+			index = i
 		}
 	}
-	log.Printf("SAVING %v", metadata)
-	data, _ := proto.Marshal(metadata)
-	ioutil.WriteFile(metadataPath, data, 0644)
+
+	log.Printf("Found metadata %v and %v", index, metadata)
+
+	// Only set the date added if this isn't a want
+	if rel.FolderId >= 0 && metadata.DateAdded <= 0 {
+		metadata.DateAdded = time.Now().Unix()
+	}
+
+	metadata.DateRefreshed = time.Now().Unix()
+	metadata.Id = rel.Id
+
+	log.Printf("Updated %v", metadata)
+
+	if index < 0 {
+		syncer.collection.Metadata = append(syncer.collection.Metadata, metadata)
+	}
 }
 
-func (syncer *Syncer) saveRelease(rel *godiscogs.Release, folder int) {
-	//Check that the save folder exists
-	savePath := syncer.saveLocation + "/" + strconv.Itoa(folder) + "/"
-	if _, err := os.Stat(savePath); os.IsNotExist(err) {
-		os.MkdirAll(savePath, 0777)
+func (syncer *Syncer) saveRelease(rel *pbd.Release, folder int32) {
+	log.Printf("SAVING: %v into %v", rel, folder)
+
+	foundFolder := false
+	for _, f := range syncer.collection.Folders {
+		if f.Folder.Id == folder {
+			foundFolder = true
+			found := false
+			for i, r := range f.Releases.Releases {
+				if r.Id == rel.Id {
+					found = true
+					f.Releases.Releases[i] = rel
+				}
+			}
+
+			if !found {
+				f.Releases.Releases = append(f.Releases.Releases, rel)
+			}
+		}
 	}
 
-	data, _ := proto.Marshal(rel)
-	log.Printf("SAVING RELEASE (%v) %v", rel.Id, rel)
-	ioutil.WriteFile(savePath+strconv.Itoa(int(rel.Id))+".release", data, 0644)
+	if !foundFolder {
+		f := &pb.CollectionFolder{}
+		f.Folder = &pbd.Folder{Id: folder}
+		f.Releases = &pb.ReleaseList{Releases: []*pbd.Release{rel}}
+		syncer.collection.Folders = append(syncer.collection.Folders, f)
+	}
+
+	log.Printf("FOLDERS: %v", syncer.collection.Folders)
+
 	syncer.saveMetadata(rel)
 }
 
@@ -183,12 +199,11 @@ type saver interface {
 
 // EditWant edits a want in the wantlist
 func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, error) {
-	for _, want := range syncer.wants.Want {
+	for _, want := range syncer.collection.Wantlist.Want {
 		if want.ReleaseId == wantIn.ReleaseId {
 			want.Valued = wantIn.Valued
 		}
 	}
-	syncer.saveWantList()
 
 	return wantIn, nil
 }
@@ -203,7 +218,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
-		syncer.saveRelease(&fullRelease, int(release.FolderId))
+		syncer.saveRelease(&fullRelease, release.FolderId)
 		if _, ok := masterMap[fullRelease.MasterId]; ok {
 			masterMap[fullRelease.MasterId] = append(masterMap[fullRelease.MasterId], fullRelease.Id)
 		} else {
@@ -227,12 +242,21 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 	}
 
 	folders := retr.GetFolders()
-	folderList := pb.FolderList{}
-	for i := range folders {
-		folder := folders[i]
-		folderList.Folders = append(folderList.Folders, &folder)
+	for _, f := range folders {
+		found := false
+		for _, f2 := range syncer.collection.Folders {
+			log.Printf("COMPARING %v and %v (%v)", f, f2.Folder, found)
+			log.Printf("%v and %v -> %v", f.Id, f2.Folder.Id, f.Id == f2.Folder.Id)
+			if f.Id == f2.Folder.Id {
+				f2.Folder.Name = f.Name
+				found = true
+			}
+		}
+		if !found {
+			log.Printf("NOT FOUND FOLDER: %v", f)
+			syncer.collection.Folders = append(syncer.collection.Folders, &pb.CollectionFolder{Folder: &f, Releases: &pb.ReleaseList{Releases: make([]*pbd.Release, 0)}})
+		}
 	}
-	syncer.SaveFolders(&folderList)
 }
 
 // SyncWantlist syncs the wantlist with the server
@@ -242,7 +266,7 @@ func (syncer *Syncer) SyncWantlist() {
 	for _, want := range wants {
 		seen := false
 		var val *pb.Want
-		for _, swant := range syncer.wants.Want {
+		for _, swant := range syncer.collection.Wantlist.Want {
 			if swant.ReleaseId == want.Id {
 				seen = true
 				val = swant
@@ -252,40 +276,29 @@ func (syncer *Syncer) SyncWantlist() {
 		if seen {
 			val.Wanted = true
 		} else {
-			syncer.wants.Want = append(syncer.wants.Want, &pb.Want{ReleaseId: want.Id, Valued: false, Wanted: true})
+			syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: want.Id, Valued: false, Wanted: true})
 		}
 	}
 
 	// Cache the want list releases
-	for _, want := range syncer.wants.Want {
+	for _, want := range syncer.collection.Wantlist.Want {
 		release, _ := syncer.retr.GetRelease(int(want.ReleaseId))
 		syncer.saveRelease(&release, -5)
 	}
 
-	syncer.saveWantList()
+	syncer.saveCollection()
 }
 
 func (syncer *Syncer) getFolders() *pb.FolderList {
-	data, _ := ioutil.ReadFile(syncer.saveLocation + "/metadata/folders")
-	folderData := &pb.FolderList{}
-	proto.Unmarshal(data, folderData)
-	return folderData
+	folderList := &pb.FolderList{}
+	for _, folder := range syncer.collection.Folders {
+		folderList.Folders = append(folderList.Folders, folder.GetFolder())
+	}
+	return folderList
 }
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
-	log.Printf("Getting Single Release: %v", in)
-
-	if val, ok := syncer.cache[in.Id]; ok {
-		log.Printf("READING FROM CACHE: %v", val)
-		releaseData, err := ioutil.ReadFile(val)
-		if err == nil {
-			release := &pbd.Release{}
-			proto.Unmarshal(releaseData, release)
-			return release, nil
-		}
-	}
-
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
 		if rel.Id == in.Id {
@@ -295,7 +308,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 	}
 
 	// We might be asking for a want here
-	rel, _ := syncer.GetRelease(int(in.Id), -5)
+	rel, _ := syncer.GetRelease(in.Id, -5)
 	if rel != nil {
 		return rel, nil
 	}
@@ -306,7 +319,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 
 // CollapseWantlist collapses the wantlist
 func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
-	for _, want := range syncer.wants.Want {
+	for _, want := range syncer.collection.Wantlist.Want {
 		if !want.Valued {
 			log.Printf("AVOIDING %v", want)
 			syncer.retr.RemoveFromWantlist(int(want.ReleaseId))
@@ -314,17 +327,17 @@ func (syncer *Syncer) CollapseWantlist(ctx context.Context, in *pb.Empty) (*pb.W
 		}
 	}
 
-	return &syncer.wants, nil
+	return syncer.collection.Wantlist, nil
 }
 
 // RebuildWantlist rebuilds the wantlist
 func (syncer *Syncer) RebuildWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
-	for _, want := range syncer.wants.Want {
+	for _, want := range syncer.collection.Wantlist.Want {
 		syncer.retr.AddToWantlist(int(want.ReleaseId))
 		want.Wanted = true
 	}
 
-	return &syncer.wants, nil
+	return syncer.collection.Wantlist, nil
 }
 
 // AddToFolder adds a release to the specified folder
@@ -332,16 +345,16 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
-	syncer.saveRelease(&fullRelease, int(in.NewFolderId))
+	syncer.saveRelease(&fullRelease, in.NewFolderId)
 	return &pb.Empty{}, nil
 }
 
 // UpdateRating updates the rating of a release
 func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
 	syncer.retr.SetRating(int(in.FolderId), int(in.Id), int(in.InstanceId), int(in.Rating))
-	fullRelease, _ := syncer.GetRelease(int(in.Id), int(in.FolderId))
+	fullRelease, _ := syncer.GetRelease(in.Id, in.FolderId)
 	fullRelease.Rating = int32(in.Rating)
-	syncer.saveRelease(fullRelease, int(fullRelease.FolderId))
+	syncer.saveRelease(fullRelease, fullRelease.FolderId)
 	return &pb.Empty{}, nil
 }
 
@@ -351,7 +364,6 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 	if err != nil {
 		return nil, err
 	}
-
 	proto.Merge(metadata, in.Update)
 
 	// Manual set of boolean fields
@@ -359,22 +371,17 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 		metadata.Others = false
 	}
 
-	metadataRoot := syncer.saveLocation + "/static-metadata/"
-	metadataPath := metadataRoot + strconv.Itoa(int(in.Release.Id)) + ".metadata"
-	data, _ := proto.Marshal(metadata)
-	ioutil.WriteFile(metadataPath, data, 0644)
-
 	return metadata, nil
 }
 
 // GetWantlist gets the wantlist
 func (syncer *Syncer) GetWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantlist, error) {
-	return &syncer.wants, nil
+	return syncer.collection.Wantlist, nil
 }
 
 // GetMetadata gets the metadata for a given release
 func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.ReleaseMetadata, error) {
-	_, metadata := syncer.GetRelease(int(in.Id), int(in.FolderId))
+	_, metadata := syncer.GetRelease(in.Id, in.FolderId)
 	log.Printf("Getting Metadata for %v -> %v", in, metadata)
 	if metadata == nil {
 		return nil, errors.New("Failed to get metadata for release")
@@ -390,7 +397,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 		folders := syncer.getFolders()
 		for _, folder := range folders.Folders {
 			if folder.Name == folderSpec.Name || folder.Id == folderSpec.Id {
-				innerReleases := syncer.getReleases(int(folder.Id))
+				innerReleases := syncer.getReleases(folder.Id)
 				releases.Releases = append(releases.Releases, innerReleases.Releases...)
 			}
 		}
@@ -399,74 +406,42 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 	return &releases, nil
 }
 
-func (syncer *Syncer) getReleases(folderID int) *pb.ReleaseList {
-	releases := pb.ReleaseList{}
-	files, _ := ioutil.ReadDir(syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/")
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".release") {
-			filename := syncer.saveLocation + "/" + strconv.Itoa(folderID) + "/" + file.Name()
-			data, _ := ioutil.ReadFile(filename)
-			release := &pbd.Release{}
-			err := proto.Unmarshal(data, release)
-			if err == nil {
-				syncer.cache[release.Id] = filename
-			}
-			releases.Releases = append(releases.Releases, release)
+func (syncer *Syncer) getReleases(folderID int32) *pb.ReleaseList {
+	for _, f := range syncer.collection.Folders {
+		if f.Folder.Id == folderID {
+			return f.Releases
 		}
 	}
-	return &releases
-}
-
-func (syncer *Syncer) saveWantList() {
-	data, _ := proto.Marshal(&syncer.wants)
-	savePath := syncer.saveLocation + "/metadata/"
-	if _, err := os.Stat(savePath); os.IsNotExist(err) {
-		os.MkdirAll(savePath, 0777)
-	}
-	ioutil.WriteFile(savePath+"wantlist", data, 0644)
-}
-
-// SaveFolders saves out the list of folders
-func (syncer *Syncer) SaveFolders(list *pb.FolderList) {
-	savePath := syncer.saveLocation + "/metadata/"
-	if _, err := os.Stat(savePath); os.IsNotExist(err) {
-		os.MkdirAll(savePath, 0777)
-	}
-
-	data, _ := proto.Marshal(list)
-	ioutil.WriteFile(savePath+"folders", data, 0644)
+	return nil
 }
 
 // GetCollection serves up the whole of the collection
 func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.ReleaseList, error) {
-	releases := pb.ReleaseList{}
-	bfiles, _ := ioutil.ReadDir(syncer.saveLocation)
-	for _, bfile := range bfiles {
-		if bfile.IsDir() && bfile.Name() != "-5" {
-			folderID, _ := strconv.Atoi(bfile.Name())
-			for _, release := range syncer.getReleases(folderID).Releases {
-				releases.Releases = append(releases.Releases, release)
-			}
+	releases := &pb.ReleaseList{}
+	log.Printf("FOLDERS: %v", syncer.collection.Folders)
+	for _, f := range syncer.collection.Folders {
+		if f.Folder.Id != -5 {
+			releases.Releases = append(releases.Releases, f.Releases.Releases...)
 		}
 	}
-	return &releases, nil
+	return releases, nil
 }
 
 // DeleteWant removes a want from the system
 func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist, error) {
 	//Remove the want file and remove from
 	index := -1
-	for i, val := range syncer.wants.Want {
+	for i, val := range syncer.collection.Wantlist.Want {
 		if val.ReleaseId == in.ReleaseId {
 			index = i
 		}
 	}
 
 	if index >= 0 {
-		syncer.wants.Want = append(syncer.wants.Want[:index], syncer.wants.Want[index+1:]...)
+		syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want[:index], syncer.collection.Wantlist.Want[index+1:]...)
 	}
 
 	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
-	syncer.saveWantList()
-	return &syncer.wants, nil
+	syncer.saveCollection()
+	return syncer.collection.Wantlist, nil
 }
