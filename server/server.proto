@@ -4,6 +4,17 @@ package discogsserver;
 
 import "github.com/brotherlogic/godiscogs/godiscogs.proto";
 
+message RecordCollection{
+	repeated CollectionFolder folders = 1;
+	repeated ReleaseMetadata metadata = 2;
+	Wantlist wantlist = 3;
+}
+
+message CollectionFolder {
+	godiscogs.Folder folder = 1;
+	ReleaseList releases = 2;
+}
+
 message ReleaseMetadata {
 	// The date the release was added
 	int64 date_added = 1;
@@ -11,14 +22,17 @@ message ReleaseMetadata {
 	// The date the release was last refreshed
 	int64 date_refreshed = 2;
 
-        //The path to the file on iTunes if available
-        string file_path = 3;
+  //The path to the file on iTunes if available
+  string file_path = 3;
 
-				// The cost of the record in pence
-				int32 cost = 4;
+	// The cost of the record in pence
+	int32 cost = 4;
 
-				// If we have other copies of this
-				bool others = 5;
+	// If we have other copies of this
+	bool others = 5;
+
+	// The id of the release this relates to
+	int32 id = 6;
 }
 
 message Empty {}
