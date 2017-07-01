@@ -458,7 +458,7 @@ func TestGetReleaseFail(t *testing.T) {
 
 func TestGetCollectionVanilla(t *testing.T) {
 	syncer := GetTestSyncer(".testGetCollection", true)
-	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection()
 
 	releases, err := syncer.GetCollection(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -483,7 +483,7 @@ func TestGetCollectionNoWantlist(t *testing.T) {
 	syncer := GetTestSyncer(".testcollectionnowantlist", true)
 	syncer.collection.Wantlist.Want = append(syncer.collection.Wantlist.Want, &pb.Want{ReleaseId: 56})
 	syncer.SyncWantlist()
-	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection()
 
 	releases, err := syncer.GetCollection(context.Background(), &pb.Empty{})
 
@@ -655,8 +655,8 @@ func TestGetFolderById(t *testing.T) {
 
 func TestOtherCopies(t *testing.T) {
 	syncer := GetTestSyncer(".testOtherCopies", true)
-	syncer.SaveCollection(&testDiscogsRetriever{})
-	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection()
+	syncer.SaveCollection()
 
 	// Some releases should be marked as having other copies
 	relHas, meta := syncer.GetRelease(29, 22)
@@ -678,7 +678,7 @@ func TestOtherCopies(t *testing.T) {
 
 func TestSimpleMove(t *testing.T) {
 	syncer := GetTestSyncer(".testSimpleMove", true)
-	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection()
 
 	_, err := syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 23, Release: &pbd.Release{Id: 79, FolderId: 22}})
 
@@ -694,11 +694,24 @@ func TestSimpleMove(t *testing.T) {
 
 func TestFalseMove(t *testing.T) {
 	syncer := GetTestSyncer(".testSimpleMove", true)
-	syncer.SaveCollection(&testDiscogsRetriever{})
+	syncer.SaveCollection()
 
 	v, err := syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{NewFolderId: 2399, Release: &pbd.Release{Id: 79, FolderId: 22}})
 
 	if err == nil {
 		t.Errorf("Bad move has not failed: %v", v)
+	}
+}
+
+func TestSync(t *testing.T) {
+	syncer := GetTestSyncer(".testsync", true)
+	syncer.SyncWithDiscogs(context.Background(), &pb.Empty{})
+
+	col, err := syncer.GetCollection(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Fatalf("Error in get collection: %v", err)
+	}
+	if len(col.Releases) == 0 {
+		t.Errorf("No releases following sync: %v", col)
 	}
 }

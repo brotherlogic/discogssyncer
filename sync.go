@@ -209,11 +209,11 @@ func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, 
 }
 
 // SaveCollection writes out the full collection to files.
-func (syncer *Syncer) SaveCollection(retr saver) {
-	releases := retr.GetCollection()
+func (syncer *Syncer) SaveCollection() {
+	releases := syncer.retr.GetCollection()
 	masterMap := make(map[int32][]int32)
 	for _, release := range releases {
-		fullRelease, err := retr.GetRelease(int(release.Id))
+		fullRelease, err := syncer.retr.GetRelease(int(release.Id))
 		log.Printf("PULL RELEASE %v from %v with %v", fullRelease, release.Id, err)
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
@@ -241,7 +241,7 @@ func (syncer *Syncer) SaveCollection(retr saver) {
 		}
 	}
 
-	folders := retr.GetFolders()
+	folders := syncer.retr.GetFolders()
 	for _, f := range folders {
 		found := false
 		for _, f2 := range syncer.collection.Folders {
@@ -444,4 +444,11 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist
 	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
 	syncer.saveCollection()
 	return syncer.collection.Wantlist, nil
+}
+
+//SyncWithDiscogs Syncs everything with discogs
+func (syncer *Syncer) SyncWithDiscogs(ctx context.Context, in *pb.Empty) (*pb.Empty, error) {
+	syncer.SaveCollection()
+	syncer.SyncWantlist()
+	return &pb.Empty{}, nil
 }

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"time"
 
 	"github.com/brotherlogic/goserver"
 	"github.com/golang/protobuf/proto"
@@ -99,7 +98,6 @@ func (s Syncer) ReportHealth() bool {
 func main() {
 	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
-	var sync = flag.Bool("sync", true, "Flag to serve rather than sync")
 	var quiet = flag.Bool("quiet", true, "Show all output")
 	flag.Parse()
 	retr := pbd.NewDiscogsRetriever(*token)
@@ -111,13 +109,7 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	if *sync {
-		syncTime = time.Now().Unix()
-		syncer.SaveCollection(retr)
-		syncer.SyncWantlist()
-	} else {
-		syncer.PrepServer()
-		syncer.RegisterServer("discogssyncer", false)
-		syncer.Serve()
-	}
+	syncer.PrepServer()
+	syncer.RegisterServer("discogssyncer", false)
+	syncer.Serve()
 }
