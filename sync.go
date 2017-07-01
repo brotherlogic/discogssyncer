@@ -448,7 +448,7 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist
 
 //SyncWithDiscogs Syncs everything with discogs
 func (syncer *Syncer) SyncWithDiscogs(ctx context.Context, in *pb.Empty) (*pb.Empty, error) {
-	syncer.SaveCollection()
+	//syncer.SaveCollection()
 	syncer.SyncWantlist()
 	return &pb.Empty{}, nil
 }

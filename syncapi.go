@@ -79,7 +79,7 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 
 // InitServer builds an initial server
 func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, &pb.RecordCollection{}}
+	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
 	syncer.Register = syncer
 
 	return syncer
