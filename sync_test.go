@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brotherlogic/keystore/client"
 	"golang.org/x/net/context"
 
 	pb "github.com/brotherlogic/discogssyncer/server"
@@ -602,18 +603,18 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 
 func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
-		saveLocation: foldername,
-		retr:         testDiscogsRetriever{},
-		collection:   &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
+		retr:       testDiscogsRetriever{},
+		collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
 	}
 
 	if delete {
-		os.RemoveAll(syncer.saveLocation)
+		os.RemoveAll(foldername)
 	}
 
 	syncer.GoServer = &goserver.GoServer{}
 	syncer.SkipLog = true
 	syncer.Register = syncer
+	syncer.GoServer.KSclient = *keystoreclient.GetTestClient(foldername)
 
 	syncer.readRecordCollection()
 
