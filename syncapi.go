@@ -30,6 +30,9 @@ var (
 const (
 	//KEY under which we store the collection
 	KEY = "/github.com/brotherlogic/discogssyncer/collection"
+
+	//TOKEN for discogs
+	TOKEN = "/github.com/brotherlogic/discogssyncer/token"
 )
 
 // This is the only method that interacts with disk
@@ -104,8 +107,8 @@ func findServer(name string) (string, int) {
 }
 
 // InitServer builds an initial server
-func InitServer(token *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *token, retr, &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
+func InitServer() Syncer {
+	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(findServer)
 	syncer.Register = syncer
 
@@ -123,11 +126,26 @@ func (s Syncer) ReportHealth() bool {
 }
 
 func main() {
-	var token = flag.String("token", "", "Discogs Token")
 	var quiet = flag.Bool("quiet", true, "Show all output")
+	var token = flag.String("token", "", "Discogs token")
 	flag.Parse()
-	retr := pbd.NewDiscogsRetriever(*token)
-	syncer := InitServer(token, retr)
+
+	syncer := InitServer()
+
+	if len(*token) > 0 {
+		syncer.KSclient.Save(TOKEN, &pb.Token{Token: *token})
+	}
+
+	tType := &pb.Token{}
+	tResp, err := syncer.KSclient.Read(TOKEN, tType)
+
+	if err != nil {
+		log.Fatalf("Unable to read token: %v", err)
+	}
+
+	sToken := tResp.(*pb.Token).Token
+	syncer.retr = pbd.NewDiscogsRetriever(sToken)
+	syncer.token = sToken
 
 	//Turn off logging
 	if *quiet {
