@@ -1,57 +1,57 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io/ioutil"
 	"log"
 
 	"github.com/brotherlogic/goserver"
-	"github.com/golang/protobuf/proto"
-
-	"os"
+	"github.com/brotherlogic/keystore/client"
+	"google.golang.org/grpc"
 
 	pb "github.com/brotherlogic/discogssyncer/server"
+	pbdi "github.com/brotherlogic/discovery/proto"
 	pbd "github.com/brotherlogic/godiscogs"
-	"google.golang.org/grpc"
 )
 
 // Syncer the configuration for the syncer
 type Syncer struct {
 	*goserver.GoServer
-	saveLocation string
-	token        string
-	retr         saver
-	collection   *pb.RecordCollection
+	token      string
+	retr       saver
+	collection *pb.RecordCollection
 }
 
 var (
 	syncTime int64
 )
 
+const (
+	//KEY under which we store the collection
+	KEY = "/github.com/brotherlogic/discogssyncer/collection"
+)
+
 // This is the only method that interacts with disk
-func (s *Syncer) readRecordCollection() {
+func (s *Syncer) readRecordCollection() error {
 	log.Printf("Reading collection")
-	savePath := s.saveLocation + "/collection"
-	if _, err := os.Stat(savePath); os.IsNotExist(err) {
-		log.Printf("No collection exists!")
-	} else {
-		data, _ := ioutil.ReadFile(savePath)
-		proto.Unmarshal(data, s.collection)
+	collection := &pb.RecordCollection{}
+	data, err := s.KSclient.Read(KEY, collection)
+
+	log.Printf("READ: %v", data)
+
+	if err != nil {
+		log.Printf("Unable to read collection: %v", err)
+		return err
 	}
 
-	log.Printf("READ %v", s.collection)
+	s.collection = data.(*pb.RecordCollection)
+	return nil
 }
 
 func (s *Syncer) saveCollection() {
-	log.Printf("SAVE: %v", s.collection)
-
-	//Place holder for collection save
-	savePath := s.saveLocation + "/collection"
-	if _, err := os.Stat(s.saveLocation); os.IsNotExist(err) {
-		os.MkdirAll(s.saveLocation, 0777)
-	}
-	data, _ := proto.Marshal(s.collection)
-	ioutil.WriteFile(savePath, data, 0644)
+	log.Printf("Writing collection")
+	s.KSclient.Save(KEY, s.collection)
 }
 
 func (s *Syncer) deleteRelease(rel *pbd.Release, folder int32) {
@@ -77,9 +77,36 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 	pb.RegisterDiscogsServiceServer(server, &s)
 }
 
+func findServer(name string) (string, int) {
+	conn, err := grpc.Dial("192.168.86.64:50055", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Cannot reach discover server: %v (trying to discover %v)", err, name)
+	}
+	defer conn.Close()
+
+	registry := pbdi.NewDiscoveryServiceClient(conn)
+	rs, err := registry.ListAllServices(context.Background(), &pbdi.Empty{})
+
+	if err != nil {
+		log.Fatalf("Failure to list: %v", err)
+	}
+
+	for _, r := range rs.Services {
+		if r.Name == name {
+			log.Printf("%v -> %v", name, r)
+			return r.Ip, int(r.Port)
+		}
+	}
+
+	log.Printf("No %v running", name)
+
+	return "", -1
+}
+
 // InitServer builds an initial server
-func InitServer(token *string, folder *string, retr saver) Syncer {
-	syncer := Syncer{&goserver.GoServer{}, *folder, *token, retr, &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
+func InitServer(token *string, retr saver) Syncer {
+	syncer := Syncer{&goserver.GoServer{}, *token, retr, &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
+	syncer.GoServer.KSclient = *keystoreclient.GetClient(findServer)
 	syncer.Register = syncer
 
 	return syncer
@@ -96,12 +123,11 @@ func (s Syncer) ReportHealth() bool {
 }
 
 func main() {
-	var folder = flag.String("folder", "/home/simon/.discogs/", "Location to store the records")
 	var token = flag.String("token", "", "Discogs Token")
 	var quiet = flag.Bool("quiet", true, "Show all output")
 	flag.Parse()
 	retr := pbd.NewDiscogsRetriever(*token)
-	syncer := InitServer(token, folder, retr)
+	syncer := InitServer(token, retr)
 
 	//Turn off logging
 	if *quiet {
