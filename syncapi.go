@@ -152,6 +152,10 @@ func main() {
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
 	}
+	err = syncer.readRecordCollection()
+	if err != nil {
+		log.Fatalf("Unable to read record collection")
+	}
 
 	syncer.PrepServer()
 	syncer.RegisterServer("discogssyncer", false)
