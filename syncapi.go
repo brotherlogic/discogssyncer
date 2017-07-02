@@ -49,6 +49,7 @@ func (s *Syncer) readRecordCollection() error {
 	}
 
 	s.collection = data.(*pb.RecordCollection)
+	log.Printf("FOLDERS = %v", len(s.collection.Folders))
 	return nil
 }
 
@@ -110,7 +111,10 @@ func findServer(name string) (string, int) {
 func InitServer() Syncer {
 	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(findServer)
-	syncer.Register = syncer
+	err := syncer.readRecordCollection()
+	if err != nil {
+		log.Fatalf("Unable to read record collection")
+	}
 
 	return syncer
 }
@@ -152,12 +156,12 @@ func main() {
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
 	}
-	err = syncer.readRecordCollection()
-	if err != nil {
-		log.Fatalf("Unable to read record collection")
-	}
 
+	syncer.Register = syncer
 	syncer.PrepServer()
 	syncer.RegisterServer("discogssyncer", false)
+
+	log.Printf("PRESERVER %v", len(syncer.collection.Folders))
+
 	syncer.Serve()
 }

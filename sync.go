@@ -299,6 +299,7 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
+	log.Printf("HERE :%v -> %v", in, len(syncer.collection.Folders))
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
 		if rel.Id == in.Id {
@@ -418,6 +419,7 @@ func (syncer *Syncer) getReleases(folderID int32) *pb.ReleaseList {
 // GetCollection serves up the whole of the collection
 func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.ReleaseList, error) {
 	releases := &pb.ReleaseList{}
+	log.Printf("NOW: %v", len(syncer.collection.Folders))
 	log.Printf("FOLDERS: %v", syncer.collection.Folders)
 	for _, f := range syncer.collection.Folders {
 		if f.Folder.Id != -5 {
