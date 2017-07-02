@@ -134,6 +134,12 @@ func main() {
 	var token = flag.String("token", "", "Discogs token")
 	flag.Parse()
 
+	//Turn off logging
+	if *quiet {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
+
 	syncer := InitServer()
 
 	if len(*token) > 0 {
@@ -150,12 +156,6 @@ func main() {
 	sToken := tResp.(*pb.Token).Token
 	syncer.retr = pbd.NewDiscogsRetriever(sToken)
 	syncer.token = sToken
-
-	//Turn off logging
-	if *quiet {
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
-	}
 
 	syncer.Register = syncer
 	syncer.PrepServer()
