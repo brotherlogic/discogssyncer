@@ -4,6 +4,10 @@ package discogsserver;
 
 import "github.com/brotherlogic/godiscogs/godiscogs.proto";
 
+message Token {
+	string token = 1;
+}
+
 message RecordCollection{
 	repeated CollectionFolder folders = 1;
 	repeated ReleaseMetadata metadata = 2;
