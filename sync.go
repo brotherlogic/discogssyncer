@@ -314,8 +314,9 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 		return rel, nil
 	}
 
-	log.Printf("Returning nil!")
-	return nil, errors.New("Unable to find release")
+	//Let's reach out to discogs and see if this is there
+	frel, err := syncer.retr.GetRelease(int(in.Id))
+	return &frel, err
 }
 
 // CollapseWantlist collapses the wantlist
