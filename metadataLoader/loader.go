@@ -43,6 +43,9 @@ func findServer(name string) (string, int) {
 }
 
 func processMetadataFile(id int32, f string) {
+
+	log.Printf("READING %v", f)
+
 	data, err := ioutil.ReadFile(f)
 	if err != nil {
 		log.Fatalf("Unable to read file: %v", err)
@@ -65,9 +68,10 @@ func processMetadataFile(id int32, f string) {
 	client := pb.NewDiscogsServiceClient(conn)
 	rs, err := client.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &pbd.Release{Id: id}, Update: metadata})
 	if err != nil {
-		log.Fatalf("Update error: %v", err)
+		log.Printf("Update error: %v", err)
+	} else {
+		log.Printf("Update success: %v", rs)
 	}
-	log.Printf("Update success: %v", rs)
 }
 
 func main() {
@@ -78,6 +82,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error proc: %v", err)
 		}
-		processMetadataFile(int32(id), f.Name())
+		processMetadataFile(int32(id), "data/"+f.Name())
 	}
 }

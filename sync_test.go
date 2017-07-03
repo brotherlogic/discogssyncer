@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"testing"
@@ -32,6 +33,11 @@ func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
 	} else if id == 32 {
 		return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
 	}
+
+	if id == 250 {
+		return pbd.Release{}, errors.New("Unable to locate")
+	}
+
 	return pbd.Release{Id: int32(id)}, nil
 }
 
@@ -450,7 +456,7 @@ func TestGetReleaseGetsWantlist(t *testing.T) {
 
 func TestGetReleaseFail(t *testing.T) {
 	syncer := GetTestSyncerNoDelete(".testGetNoRelease")
-	release := &pbd.Release{Id: 25}
+	release := &pbd.Release{Id: 250}
 	newRelease, err := syncer.GetSingleRelease(context.Background(), release)
 	if err == nil {
 		t.Errorf("Failed to error on release: %v", newRelease)
@@ -701,6 +707,20 @@ func TestFalseMove(t *testing.T) {
 
 	if err == nil {
 		t.Errorf("Bad move has not failed: %v", v)
+	}
+}
+
+func TestGetMadeupRelease(t *testing.T) {
+	syncer := GetTestSyncer(".testgetmadeuprelease", true)
+
+	r, err := syncer.GetSingleRelease(context.Background(), &pbd.Release{Id: 32})
+
+	if err != nil {
+		t.Fatalf("Retrieve error: %v -> %v", r, err)
+	}
+
+	if r == nil {
+		t.Errorf("Release has come back wrong %v", r)
 	}
 }
 
