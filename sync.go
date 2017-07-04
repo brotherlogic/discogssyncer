@@ -150,6 +150,8 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	if index < 0 {
 		syncer.collection.Metadata = append(syncer.collection.Metadata, metadata)
 	}
+
+	syncer.saveCollection()
 }
 
 func (syncer *Syncer) saveRelease(rel *pbd.Release, folder int32) {
@@ -375,6 +377,7 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 		metadata.Others = false
 	}
 
+	syncer.saveCollection()
 	return metadata, nil
 }
 
