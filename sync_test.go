@@ -736,3 +736,19 @@ func TestSync(t *testing.T) {
 		t.Errorf("No releases following sync: %v", col)
 	}
 }
+
+func TestGetFolder(t *testing.T) {
+	syncer := GetTestSyncer(".testgetfolder", true)
+	syncer.collection.Folders = append(syncer.collection.Folders, &pb.CollectionFolder{Folder: &pbd.Folder{Id: 23}, Releases: &pb.ReleaseList{Releases: make([]*pbd.Release, 0)}})
+	syncer.SaveCollection()
+
+	list, err := syncer.GetReleasesInFolder(context.Background(), &pb.FolderList{Folders: []*pbd.Folder{&pbd.Folder{Name: "Testing"}}})
+
+	if err != nil {
+		t.Fatalf("Error in getting releases: %v", err)
+	}
+
+	if len(list.Releases) == 0 {
+		t.Errorf("No releases returned: %v", list)
+	}
+}
