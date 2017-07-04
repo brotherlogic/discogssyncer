@@ -257,6 +257,8 @@ func (syncer *Syncer) SaveCollection() {
 			syncer.collection.Folders = append(syncer.collection.Folders, &pb.CollectionFolder{Folder: &f, Releases: &pb.ReleaseList{Releases: make([]*pbd.Release, 0)}})
 		}
 	}
+
+	syncer.saveCollection()
 }
 
 // SyncWantlist syncs the wantlist with the server
