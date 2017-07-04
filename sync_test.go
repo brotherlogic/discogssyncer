@@ -752,3 +752,25 @@ func TestGetFolder(t *testing.T) {
 		t.Errorf("No releases returned: %v", list)
 	}
 }
+
+func TestSyncWithOverwrite(t *testing.T) {
+	syncer := GetTestSyncer(".testsyncwithoverwrite", true)
+	syncer.SyncWithDiscogs(context.Background(), &pb.Empty{})
+
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &pbd.Release{Id: 25}, Update: &pb.ReleaseMetadata{DateAdded: 200}})
+
+	rel, met := syncer.GetRelease(25, 23)
+	if met.DateAdded != 200 {
+		t.Fatalf("Metadata has not been updated! %v -> %v", rel, met)
+	}
+
+	log.Printf("COLLECTION = %v", syncer.collection)
+
+	syncer2 := GetTestSyncer(".testsyncwithoverwrite", false)
+	syncer2.SyncWithDiscogs(context.Background(), &pb.Empty{})
+
+	rel, met = syncer2.GetRelease(25, 23)
+	if met.DateAdded != 200 {
+		t.Fatalf("Resync has overwritten metadata! %v -> %v", rel, met)
+	}
+}
