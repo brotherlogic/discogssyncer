@@ -303,6 +303,7 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
+	t1 := time.Now()
 	log.Printf("HERE :%v -> %v", in, len(syncer.collection.Folders))
 	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
 	for _, rel := range col.Releases {
@@ -320,6 +321,8 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 
 	//Let's reach out to discogs and see if this is there
 	frel, err := syncer.retr.GetRelease(int(in.Id))
+	taken := time.Now().Sub(t1)
+	syncer.LogFunction("GetSingleRelease", int32(taken.Nanoseconds()))
 	return &frel, err
 }
 
