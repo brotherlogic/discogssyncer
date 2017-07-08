@@ -309,7 +309,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 	for _, rel := range col.Releases {
 		if rel.Id == in.Id {
 			log.Printf("Returning %v", rel)
-			syncer.LogFunction("GetSingleRelease-coll", int32(time.Now().Sub(t1).Nanoseconds()/1000))
+			syncer.LogFunction("GetSingleRelease-coll", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
 			return rel, nil
 		}
 	}
@@ -317,14 +317,14 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 	// We might be asking for a want here
 	rel, _ := syncer.GetRelease(in.Id, -5)
 	if rel != nil {
-		syncer.LogFunction("GetSingleRelease-want", int32(time.Now().Sub(t1).Nanoseconds()/1000))
+		syncer.LogFunction("GetSingleRelease-want", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
 		return rel, nil
 	}
 
 	//Let's reach out to discogs and see if this is there
 	frel, err := syncer.retr.GetRelease(int(in.Id))
 	log.Printf("LOGGING")
-	syncer.LogFunction("GetSingleRelease-discogs", int32(time.Now().Sub(t1).Nanoseconds()/1000))
+	syncer.LogFunction("GetSingleRelease-discogs", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
 	return &frel, err
 }
 
