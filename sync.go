@@ -429,6 +429,7 @@ func (syncer *Syncer) getReleases(folderID int32) *pb.ReleaseList {
 
 // GetCollection serves up the whole of the collection
 func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.ReleaseList, error) {
+	t1 := time.Now()
 	releases := &pb.ReleaseList{}
 	log.Printf("NOW: %v", len(syncer.collection.Folders))
 	log.Printf("FOLDERS: %v", syncer.collection.Folders)
@@ -437,6 +438,7 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 			releases.Releases = append(releases.Releases, f.Releases.Releases...)
 		}
 	}
+	syncer.LogFunction("GetCollection", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
 	return releases, nil
 }
 
