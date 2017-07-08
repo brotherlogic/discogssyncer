@@ -1,4 +1,4 @@
-# discogssyncer
+# Discogssyncer
 
 Builds out a local discogs server, just to serve your own personal collection and related, and nothing more.
 
