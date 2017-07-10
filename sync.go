@@ -371,6 +371,7 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 
 // UpdateMetadata updates the metadata of a given record
 func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
+	t := time.Now()
 	metadata, err := syncer.GetMetadata(ctx, in.Release)
 	if err != nil {
 		return nil, err
@@ -383,6 +384,7 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 	}
 
 	syncer.saveCollection()
+	syncer.LogFunction("UpdateMetadata", int32(time.Now().Sub(t).Nanoseconds()/1000000))
 	return metadata, nil
 }
 

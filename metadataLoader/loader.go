@@ -42,7 +42,7 @@ func findServer(name string) (string, int) {
 	return "", -1
 }
 
-func processMetadataFile(id int32, f string) {
+func processMetadataFile(id int32, f string, client pb.DiscogsServiceClient) {
 
 	log.Printf("READING %v", f)
 
@@ -56,16 +56,6 @@ func processMetadataFile(id int32, f string) {
 		log.Fatalf("Unable to unmarshall data %v", err)
 	}
 
-	host, port := findServer("discogssyncer")
-	if port <= 0 {
-		log.Fatalf("Unable to find server")
-	}
-	conn, err := grpc.Dial(host+":"+strconv.Itoa(port), grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Unable to dial server: %v", err)
-	}
-
-	client := pb.NewDiscogsServiceClient(conn)
 	rs, err := client.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &pbd.Release{Id: id}, Update: metadata})
 	if err != nil {
 		log.Printf("Update error: %v", err)
@@ -75,6 +65,17 @@ func processMetadataFile(id int32, f string) {
 }
 
 func main() {
+	host, port := findServer("discogssyncer")
+	if port <= 0 {
+		log.Fatalf("Unable to find server")
+	}
+	conn, err := grpc.Dial(host+":"+strconv.Itoa(port), grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Unable to dial server: %v", err)
+	}
+	defer conn.Close()
+
+	client := pb.NewDiscogsServiceClient(conn)
 	dir, _ := ioutil.ReadDir("data")
 	for _, f := range dir {
 		parts := strings.Split(f.Name(), ".")
@@ -82,6 +83,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error proc: %v", err)
 		}
-		processMetadataFile(int32(id), "data/"+f.Name())
+		processMetadataFile(int32(id), "data/"+f.Name(), client)
 	}
 }
