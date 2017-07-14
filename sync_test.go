@@ -19,8 +19,8 @@ type testDiscogsRetriever struct{}
 
 func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	var releases = make([]pbd.Release, 0)
-	releases = append(releases, pbd.Release{FolderId: 23, Id: 25, MasterId: 234})
-	releases = append(releases, pbd.Release{FolderId: 23, Id: 32, MasterId: 245})
+	releases = append(releases, pbd.Release{FolderId: 23, Id: 25, MasterId: 234, InstanceId: 1234})
+	releases = append(releases, pbd.Release{FolderId: 23, Id: 32, MasterId: 245, InstanceId: 1233})
 	releases = append(releases, pbd.Release{FolderId: 22, Id: 29, MasterId: 234})
 	releases = append(releases, pbd.Release{FolderId: 22, Id: 65})
 	releases = append(releases, pbd.Release{FolderId: 22, Id: 79})
@@ -73,6 +73,35 @@ func (testDiscogsRetriever) RemoveFromWantlist(releaseID int) {
 
 func (testDiscogsRetriever) AddToWantlist(releaseID int) {
 	// Do nothing
+}
+
+func TestRemoveInstance(t *testing.T) {
+	syncer := GetTestSyncer(".testRemoveInstance", true)
+	syncer.SaveCollection()
+
+	col, err := syncer.GetCollection(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Failure to get collection: %v", err)
+	}
+
+	if len(col.Releases) != 5 {
+		t.Fatalf("Not enough releases on the first pull? %v", len(col.Releases))
+	}
+
+	_, err = syncer.DeleteInstance(context.Background(), &pbd.Release{InstanceId: 1234})
+	if err != nil {
+		t.Fatalf("Error deleting instance: %v", err)
+	}
+
+	col, err = syncer.GetCollection(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Errorf("Failure to get collection: %v", err)
+	}
+
+	if len(col.Releases) != 4 {
+		t.Fatalf("Not enough releases on the second pull? %v", len(col.Releases))
+	}
+
 }
 
 func TestSearch(t *testing.T) {
