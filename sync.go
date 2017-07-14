@@ -37,6 +37,18 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 	return release, metadata
 }
 
+//DeleteInstance removes a specific instance
+func (syncer *Syncer) DeleteInstance(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
+	for _, folder := range syncer.collection.Folders {
+		for i, rel := range folder.Releases.Releases {
+			if rel.InstanceId == in.InstanceId {
+				folder.Releases.Releases = append(folder.Releases.Releases[:i], folder.Releases.Releases[i+1:]...)
+			}
+		}
+	}
+	return &pb.Empty{}, nil
+}
+
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 
