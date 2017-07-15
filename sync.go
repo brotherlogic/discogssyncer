@@ -46,6 +46,7 @@ func (syncer *Syncer) DeleteInstance(ctx context.Context, in *pbd.Release) (*pb.
 			}
 		}
 	}
+	syncer.saveCollection()
 	return &pb.Empty{}, nil
 }
 
