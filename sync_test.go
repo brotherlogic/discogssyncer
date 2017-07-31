@@ -611,6 +611,7 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
 		retr:       testDiscogsRetriever{},
 		collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
+		rMap:       make(map[int]*pbd.Release),
 	}
 
 	if delete {

@@ -210,17 +210,30 @@ func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, 
 	return wantIn, nil
 }
 
+func (syncer *Syncer) getRelease(rID int) (*pbd.Release, error) {
+	if val, ok := syncer.rMap[rID]; ok {
+		//Make a copy to return
+		return proto.Clone(val).(*pbd.Release), nil
+	}
+
+	release, err := syncer.retr.GetRelease(rID)
+	syncer.rMap[rID] = &release
+	return proto.Clone(&release).(*pbd.Release), err
+}
+
 // SaveCollection writes out the full collection to files.
 func (syncer *Syncer) SaveCollection() {
+	log.Printf("SAVING COLLECTION")
 	releases := syncer.retr.GetCollection()
 	masterMap := make(map[int32][]int32)
+	log.Printf("SAVING RELEASES")
 	for _, release := range releases {
-		fullRelease, err := syncer.retr.GetRelease(int(release.Id))
+		fullRelease, err := syncer.getRelease(int(release.Id))
 		log.Printf("PULL RELEASE %v from %v with %v", fullRelease, release.Id, err)
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
-		syncer.saveRelease(&fullRelease, release.FolderId)
+		syncer.saveRelease(fullRelease, release.FolderId)
 		if _, ok := masterMap[fullRelease.MasterId]; ok {
 			masterMap[fullRelease.MasterId] = append(masterMap[fullRelease.MasterId], fullRelease.Id)
 		} else {
@@ -243,6 +256,7 @@ func (syncer *Syncer) SaveCollection() {
 		}
 	}
 
+	log.Printf("GETTING FOLDERS")
 	folders := syncer.retr.GetFolders()
 	for _, f := range folders {
 		found := false
@@ -260,6 +274,7 @@ func (syncer *Syncer) SaveCollection() {
 		}
 	}
 
+	log.Printf("SAVING COLLECTION")
 	syncer.saveCollection()
 }
 
