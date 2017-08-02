@@ -22,6 +22,7 @@ type Syncer struct {
 	token      string
 	retr       saver
 	collection *pb.RecordCollection
+	rMap       map[int]*pbd.Release
 }
 
 var (
@@ -51,6 +52,14 @@ func (s *Syncer) readRecordCollection() error {
 
 	s.collection = data.(*pb.RecordCollection)
 	log.Printf("FOLDERS = %v", len(s.collection.Folders))
+
+	// Build out the release map
+	for _, f := range s.collection.Folders {
+		for _, r := range f.Releases.Releases {
+			s.rMap[int(r.Id)] = r
+		}
+	}
+
 	return nil
 }
 
@@ -112,7 +121,7 @@ func findServer(name string) (string, int) {
 
 // InitServer builds an initial server
 func InitServer() Syncer {
-	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}}
+	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release)}
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(findServer)
 	err := syncer.readRecordCollection()
 	if err != nil {
