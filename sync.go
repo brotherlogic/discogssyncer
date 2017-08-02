@@ -39,15 +39,18 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 
 //DeleteInstance removes a specific instance
 func (syncer *Syncer) DeleteInstance(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
+	log.Printf("RUNNING DELETE")
 	for _, folder := range syncer.collection.Folders {
 		for i, rel := range folder.Releases.Releases {
 			if rel.InstanceId == in.InstanceId {
+				log.Printf("DELETING %v (%v)", i, len(folder.Releases.Releases))
 				folder.Releases.Releases = append(folder.Releases.Releases[:i], folder.Releases.Releases[i+1:]...)
+				syncer.saveCollection()
+				return &pb.Empty{}, nil
 			}
 		}
 	}
-	syncer.saveCollection()
-	return &pb.Empty{}, nil
+	return &pb.Empty{}, errors.New("Unable to find instance to deleteo get -u github.com/brotherlogic/records")
 }
 
 // MoveToFolder moves a release to the specified folder
