@@ -24,6 +24,7 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 		if f.Folder.Id == folder {
 			for _, r := range f.Releases.Releases {
 				if r.Id == id {
+					log.Printf("FOUND %v in folder %v", r, f)
 					release = r
 				}
 			}
@@ -91,7 +92,6 @@ func match(query string, str string) bool {
 // Search performs a search of the database
 func (syncer *Syncer) Search(ctx context.Context, req *pb.SearchRequest) (*pb.ReleaseList, error) {
 	all, _ := syncer.GetCollection(ctx, &pb.Empty{})
-	log.Printf("Running over collection: %v", all)
 	fil := &pb.ReleaseList{}
 	for _, rel := range all.Releases {
 		if match(req.Query, rel.Title) || match(req.Query, pbd.GetReleaseArtist(*rel)) {
@@ -109,9 +109,6 @@ func (syncer *Syncer) GetSpend(ctx context.Context, req *pb.SpendRequest) (*pb.S
 	for _, rel := range col.Releases {
 		_, metadata := syncer.GetRelease(rel.Id, rel.FolderId)
 		datev := time.Unix(metadata.DateAdded, 0)
-		log.Printf("WE ARE HERE %v", req.Month)
-		log.Printf("%v -> %v", req.Lower, req.Upper)
-		log.Printf("%v", metadata.DateAdded)
 		if (req.Year <= 0 || datev.Year() == int(req.Year)) && (req.Month <= 0 || int32(datev.Month()) == req.Month) && (req.Lower <= 0 || (metadata.DateAdded >= req.Lower && metadata.DateAdded <= req.Upper)) {
 			if metadata.Cost == 0 {
 				spend += 3000
@@ -166,8 +163,6 @@ func (syncer *Syncer) saveMetadata(rel *godiscogs.Release) {
 	if index < 0 {
 		syncer.collection.Metadata = append(syncer.collection.Metadata, metadata)
 	}
-
-	syncer.saveCollection()
 }
 
 func (syncer *Syncer) saveRelease(rel *pbd.Release, folder int32) {
@@ -181,11 +176,13 @@ func (syncer *Syncer) saveRelease(rel *pbd.Release, folder int32) {
 			for i, r := range f.Releases.Releases {
 				if r.Id == rel.Id {
 					found = true
+					log.Printf("REPLACING WITH %v", rel)
 					f.Releases.Releases[i] = rel
 				}
 			}
 
 			if !found {
+				log.Printf("ADDING TO %v", rel)
 				f.Releases.Releases = append(f.Releases.Releases, rel)
 			}
 		}
@@ -197,8 +194,6 @@ func (syncer *Syncer) saveRelease(rel *pbd.Release, folder int32) {
 		f.Releases = &pb.ReleaseList{Releases: []*pbd.Release{rel}}
 		syncer.collection.Folders = append(syncer.collection.Folders, f)
 	}
-
-	log.Printf("FOLDERS: %v", syncer.collection.Folders)
 
 	syncer.saveMetadata(rel)
 }
@@ -228,6 +223,7 @@ func (syncer *Syncer) EditWant(ctx context.Context, wantIn *pb.Want) (*pb.Want, 
 
 func (syncer *Syncer) getRelease(rID int) (*pbd.Release, error) {
 	if val, ok := syncer.rMap[rID]; ok {
+		log.Printf("Getting release %v from cache", rID)
 		//Make a copy to return
 		return proto.Clone(val).(*pbd.Release), nil
 	}
@@ -242,19 +238,41 @@ func (syncer *Syncer) SaveCollection() {
 	log.Printf("SAVING COLLECTION")
 	releases := syncer.retr.GetCollection()
 	masterMap := make(map[int32][]int32)
+	rMap := make(map[int32][]int32)
 	log.Printf("SAVING RELEASES")
 	for _, release := range releases {
 		fullRelease, err := syncer.getRelease(int(release.Id))
-		log.Printf("PULL RELEASE %v from %v with %v", fullRelease, release.Id, err)
+		log.Printf("PULL RELEASE %v from %v with %v -> %v", fullRelease, release.Id, err, release)
 		fullRelease.InstanceId = release.InstanceId
 		fullRelease.FolderId = release.FolderId
 		fullRelease.Rating = release.Rating
 		syncer.saveRelease(fullRelease, release.FolderId)
 		if _, ok := masterMap[fullRelease.MasterId]; ok {
 			masterMap[fullRelease.MasterId] = append(masterMap[fullRelease.MasterId], fullRelease.Id)
+			rMap[fullRelease.Id] = append(rMap[fullRelease.Id], release.FolderId)
 		} else {
 			masterMap[fullRelease.MasterId] = []int32{fullRelease.Id}
+			rMap[fullRelease.Id] = []int32{release.FolderId}
 		}
+	}
+
+	for _, f := range syncer.collection.Folders {
+		start := len(f.Releases.Releases)
+		removed := 0
+		for i, r := range f.Releases.Releases {
+			found := false
+			for _, fID := range rMap[r.Id] {
+				if fID == f.Folder.Id {
+					found = true
+				}
+			}
+			if !found {
+				log.Printf("REMOVING %v", r)
+				f.Releases.Releases = append(f.Releases.Releases[:(i-removed)], f.Releases.Releases[(i-removed)+1:]...)
+				removed++
+			}
+		}
+		log.Printf("CHANGE IN LEN (%v) %v -> %v", f.Folder.Name, start, len(f.Releases.Releases))
 	}
 
 	//Process out the multi release map
@@ -268,7 +286,7 @@ func (syncer *Syncer) SaveCollection() {
 				meta.Others = false
 			}
 			log.Printf("Updating %v with %v", rel, meta)
-			syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
+			syncer.doMetadataUpdate(&pb.MetadataUpdate{Release: &godiscogs.Release{Id: rel}, Update: meta})
 		}
 	}
 
@@ -290,7 +308,10 @@ func (syncer *Syncer) SaveCollection() {
 		}
 	}
 
-	log.Printf("SAVING COLLECTION")
+	log.Printf("SAVING COLLECTION %v", syncer.collection)
+	for _, f := range syncer.collection.Folders {
+		log.Printf("END LEN (%v) %v", f.Folder.Name, len(f.Releases.Releases))
+	}
 	syncer.saveCollection()
 }
 
@@ -317,8 +338,8 @@ func (syncer *Syncer) SyncWantlist() {
 
 	// Cache the want list releases
 	for _, want := range syncer.collection.Wantlist.Want {
-		release, _ := syncer.retr.GetRelease(int(want.ReleaseId))
-		syncer.saveRelease(&release, -5)
+		release, _ := syncer.getRelease(int(want.ReleaseId))
+		syncer.saveRelease(release, -5)
 	}
 
 	syncer.saveCollection()
@@ -400,13 +421,13 @@ func (syncer *Syncer) UpdateRating(ctx context.Context, in *pbd.Release) (*pb.Em
 	return &pb.Empty{}, nil
 }
 
-// UpdateMetadata updates the metadata of a given record
-func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
-	t := time.Now()
-	metadata, err := syncer.GetMetadata(ctx, in.Release)
-	if err != nil {
-		return nil, err
+func (syncer *Syncer) doMetadataUpdate(in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
+	_, metadata := syncer.GetRelease(in.Release.Id, in.Release.FolderId)
+
+	if metadata == nil {
+		return nil, errors.New("Unable to locate metadata")
 	}
+
 	proto.Merge(metadata, in.Update)
 
 	// Manual set of boolean fields
@@ -414,9 +435,22 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 		metadata.Others = false
 	}
 
+	return metadata, nil
+}
+
+// UpdateMetadata updates the metadata of a given record
+func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate) (*pb.ReleaseMetadata, error) {
+	t := time.Now()
+
+	m, err := syncer.doMetadataUpdate(in)
+
+	if err != nil {
+		return m, err
+	}
+
 	syncer.saveCollection()
 	syncer.LogFunction("UpdateMetadata", int32(time.Now().Sub(t).Nanoseconds()/1000000))
-	return metadata, nil
+	return m, nil
 }
 
 // GetWantlist gets the wantlist
@@ -466,9 +500,9 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 	t1 := time.Now()
 	releases := &pb.ReleaseList{}
 	log.Printf("NOW: %v", len(syncer.collection.Folders))
-	log.Printf("FOLDERS: %v", syncer.collection.Folders)
 	for _, f := range syncer.collection.Folders {
 		if f.Folder.Id != -5 {
+			log.Printf("%v: %v", f.Folder.Id, f.Releases.Releases)
 			releases.Releases = append(releases.Releases, f.Releases.Releases...)
 		}
 	}

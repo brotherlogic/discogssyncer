@@ -804,3 +804,23 @@ func TestSyncWithOverwrite(t *testing.T) {
 		t.Fatalf("Resync has overwritten metadata! %v -> %v", rel, met)
 	}
 }
+
+func TestDeleteFail(t *testing.T) {
+	syncer := GetTestSyncer(".testdeletefail", true)
+	syncer.SyncWithDiscogs(context.Background(), &pb.Empty{})
+
+	_, err := syncer.DeleteInstance(context.Background(), &pbd.Release{InstanceId: 123456666})
+	if err == nil {
+		t.Errorf("Instance was deleted despite not existing")
+	}
+}
+
+func TestGetMetadataFail(t *testing.T) {
+	syncer := GetTestSyncer(".testdeletefail", true)
+	syncer.SyncWithDiscogs(context.Background(), &pb.Empty{})
+
+	_, err := syncer.GetMetadata(context.Background(), &pbd.Release{Id: 123456666})
+	if err == nil {
+		t.Errorf("Get Metadata of unknown release did not fail")
+	}
+}

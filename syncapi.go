@@ -43,15 +43,12 @@ func (s *Syncer) readRecordCollection() error {
 	collection := &pb.RecordCollection{}
 	data, err := s.KSclient.Read(KEY, collection)
 
-	log.Printf("READ: %v", data)
-
 	if err != nil {
 		log.Printf("Unable to read collection: %v", err)
 		return err
 	}
 
 	s.collection = data.(*pb.RecordCollection)
-	log.Printf("FOLDERS = %v", len(s.collection.Folders))
 
 	// Build out the release map
 	for _, f := range s.collection.Folders {
