@@ -75,6 +75,24 @@ func (testDiscogsRetriever) AddToWantlist(releaseID int) {
 	// Do nothing
 }
 
+func (testDiscogsRetriever) GetSalePrice(releaseID int) float32 {
+	return 12.35
+}
+
+func (testDiscogsRetriever) SellRecord(releaseID int, price float32, state string) {
+	// Do nothing
+}
+
+func TestSellRecord(t *testing.T) {
+	syncer := GetTestSyncer(".testRemoveInstance", true)
+	syncer.SaveCollection()
+	_, err := syncer.Sell(context.Background(), &pbd.Release{Id: 123})
+
+	if err != nil {
+		t.Errorf("Failure to sell record")
+	}
+}
+
 func TestRemoveInstance(t *testing.T) {
 	syncer := GetTestSyncer(".testRemoveInstance", true)
 	syncer.SaveCollection()

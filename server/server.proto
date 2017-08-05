@@ -119,4 +119,6 @@ service DiscogsService {
 				rpc SyncWithDiscogs(Empty) returns (Empty) {};
 
 				rpc DeleteInstance(godiscogs.Release) returns (Empty) {};
+
+				rpc Sell(godiscogs.Release) returns (Empty) {};
 }
