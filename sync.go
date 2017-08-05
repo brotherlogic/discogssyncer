@@ -208,6 +208,8 @@ type saver interface {
 	GetWantlist() ([]pbd.Release, error)
 	RemoveFromWantlist(releaseID int)
 	AddToWantlist(releaseID int)
+	SellRecord(releaseID int, price float32, state string)
+	GetSalePrice(releaseID int) float32
 }
 
 // EditWant edits a want in the wantlist
@@ -527,6 +529,13 @@ func (syncer *Syncer) DeleteWant(ctx context.Context, in *pb.Want) (*pb.Wantlist
 	syncer.retr.RemoveFromWantlist(int(in.ReleaseId))
 	syncer.saveCollection()
 	return syncer.collection.Wantlist, nil
+}
+
+//Sell sells the record
+func (syncer *Syncer) Sell(ctx context.Context, in *pbd.Release) (*pb.Empty, error) {
+	price := syncer.retr.GetSalePrice(int(in.Id))
+	syncer.retr.SellRecord(int(in.Id), price, "For Sale")
+	return &pb.Empty{}, nil
 }
 
 //SyncWithDiscogs Syncs everything with discogs
