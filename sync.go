@@ -259,15 +259,19 @@ func (syncer *Syncer) SaveCollection() {
 	}
 
 	for _, f := range syncer.collection.Folders {
+		log.Printf("PROCESSING %v -> %v", f.Folder.Name, f.Releases.Releases)
 		start := len(f.Releases.Releases)
 		removed := 0
-		for i, r := range f.Releases.Releases {
+		for i := range f.Releases.Releases {
 			found := false
+			r := f.Releases.Releases[i-removed]
+			log.Printf("RMAP: %v -> %v", r.Id, rMap[r.Id])
 			for _, fID := range rMap[r.Id] {
 				if fID == f.Folder.Id {
 					found = true
 				}
 			}
+			log.Printf("FOUND %v in folder %v", r.Id, found)
 			if !found {
 				log.Printf("REMOVING %v", r)
 				f.Releases.Releases = append(f.Releases.Releases[:(i-removed)], f.Releases.Releases[(i-removed)+1:]...)
@@ -479,6 +483,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 		for _, folder := range folders.Folders {
 			if (len(folder.Name) > 0 && folder.Name == folderSpec.Name) || folder.Id == folderSpec.Id {
 				innerReleases := syncer.getReleases(folder.Id)
+				log.Printf("ADDING FOLDER %v -> %v", folder, innerReleases)
 				releases.Releases = append(releases.Releases, innerReleases.Releases...)
 			}
 		}
