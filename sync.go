@@ -82,6 +82,9 @@ func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb
 	syncer.Log(fmt.Sprintf("Moving %v from %v to %v", in.Release.Id, in.Release.FolderId, in.NewFolderId))
 	syncer.saveRelease(&fullRelease, in.NewFolderId)
 	syncer.deleteRelease(&fullRelease, oldFolder)
+
+	syncer.saveCollection()
+
 	return &pb.Empty{}, nil
 }
 
