@@ -366,20 +366,14 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
 	t1 := time.Now()
 	log.Printf("HERE :%v -> %v", in, len(syncer.collection.Folders))
-	col, _ := syncer.GetCollection(ctx, &pb.Empty{})
-	for _, rel := range col.Releases {
-		if rel.Id == in.Id {
-			log.Printf("Returning %v", rel)
-			syncer.LogFunction("GetSingleRelease-coll", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
-			return rel, nil
+	for _, folder := range syncer.collection.GetFolders() {
+		for _, rel := range folder.GetReleases().GetReleases() {
+			if rel.Id == in.Id {
+				log.Printf("Returning %v", rel)
+				syncer.LogFunction("GetSingleRelease-collection", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
+				return rel, nil
+			}
 		}
-	}
-
-	// We might be asking for a want here
-	rel, _ := syncer.GetRelease(in.Id, -5)
-	if rel != nil {
-		syncer.LogFunction("GetSingleRelease-want", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
-		return rel, nil
 	}
 
 	//Let's reach out to discogs and see if this is there
