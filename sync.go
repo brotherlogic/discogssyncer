@@ -370,7 +370,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 		for _, rel := range folder.GetReleases().GetReleases() {
 			if rel.Id == in.Id {
 				log.Printf("Returning %v", rel)
-				syncer.LogFunction("GetSingleRelease-collection", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
+				syncer.LogFunction("GetSingleRelease-collection", t1)
 				return rel, nil
 			}
 		}
@@ -379,7 +379,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 	//Let's reach out to discogs and see if this is there
 	frel, err := syncer.retr.GetRelease(int(in.Id))
 	log.Printf("LOGGING")
-	syncer.LogFunction("GetSingleRelease-discogs", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
+	syncer.LogFunction("GetSingleRelease-discogs", t1)
 	return &frel, err
 }
 
@@ -452,7 +452,7 @@ func (syncer *Syncer) UpdateMetadata(ctx context.Context, in *pb.MetadataUpdate)
 	}
 
 	syncer.saveCollection()
-	syncer.LogFunction("UpdateMetadata", int32(time.Now().Sub(t).Nanoseconds()/1000000))
+	syncer.LogFunction("UpdateMetadata", t)
 	return m, nil
 }
 
@@ -486,7 +486,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 		}
 	}
 
-	syncer.LogFunction("GetReleasesInFolder", int32(time.Now().Sub(t).Nanoseconds()/1000000))
+	syncer.LogFunction("GetReleasesInFolder", t)
 	return &releases, nil
 }
 
@@ -510,7 +510,7 @@ func (syncer *Syncer) GetCollection(ctx context.Context, in *pb.Empty) (*pb.Rele
 			releases.Releases = append(releases.Releases, f.Releases.Releases...)
 		}
 	}
-	syncer.LogFunction("GetCollection", int32(time.Now().Sub(t1).Nanoseconds()/1000000))
+	syncer.LogFunction("GetCollection", t1)
 	return releases, nil
 }
 

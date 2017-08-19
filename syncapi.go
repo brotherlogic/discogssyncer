@@ -64,7 +64,7 @@ func (s *Syncer) saveCollection() {
 	t := time.Now()
 	log.Printf("Writing collection")
 	s.KSclient.Save(KEY, s.collection)
-	s.LogFunction("saveCollection", int32(time.Now().Sub(t).Nanoseconds()/1000000))
+	s.LogFunction("saveCollection", t)
 }
 
 func (s *Syncer) deleteRelease(rel *pbd.Release, folder int32) {
