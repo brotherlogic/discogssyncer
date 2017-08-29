@@ -463,11 +463,14 @@ func (syncer *Syncer) GetWantlist(ctx context.Context, in *pb.Empty) (*pb.Wantli
 
 // GetMetadata gets the metadata for a given release
 func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.ReleaseMetadata, error) {
+	t := time.Now()
 	_, metadata := syncer.GetRelease(in.Id, in.FolderId)
 	log.Printf("Getting Metadata for %v -> %v", in, metadata)
 	if metadata == nil {
+		syncer.LogFunction("GetMetadata-fail", t)
 		return nil, errors.New("Failed to get metadata for release")
 	}
+	syncer.LogFunction("GetMetadata", t)
 	return metadata, nil
 }
 
