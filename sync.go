@@ -20,6 +20,7 @@ import (
 func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.ReleaseMetadata) {
 	var release *pbd.Release
 	var metadata *pb.ReleaseMetadata
+	t := time.Now()
 	for _, f := range syncer.collection.Folders {
 		if f.Folder.Id == folder {
 			for _, r := range f.Releases.Releases {
@@ -30,11 +31,16 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 			}
 		}
 	}
+	syncer.LogFunction("GetRelease-GetRelease", t)
+
+	t = time.Now()
 	for _, m := range syncer.collection.Metadata {
 		if m.Id == id {
 			metadata = m
 		}
 	}
+	syncer.LogFunction("GetRelease-GetMetadata", t)
+
 	return release, metadata
 }
 
