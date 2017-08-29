@@ -21,12 +21,15 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 	var release *pbd.Release
 	var metadata *pb.ReleaseMetadata
 	t := time.Now()
-	for _, f := range syncer.collection.Folders {
-		if f.Folder.Id == folder {
-			for _, r := range f.Releases.Releases {
-				if r.Id == id {
-					log.Printf("FOUND %v in folder %v", r, f)
-					release = r
+	release = syncer.rMap[int(id)]
+	if release == nil || release.FolderId != folder {
+		for _, f := range syncer.collection.Folders {
+			if f.Folder.Id == folder {
+				for _, r := range f.Releases.Releases {
+					if r.Id == id {
+						log.Printf("FOUND %v in folder %v", r, f)
+						release = r
+					}
 				}
 			}
 		}
