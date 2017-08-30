@@ -65,7 +65,7 @@ func (syncer *Syncer) GetIncompleteReleases(ctx context.Context, in *pb.Empty) (
 	inc := &pb.ReleaseList{Releases: make([]*pbd.Release, 0)}
 
 	for _, md := range syncer.collection.GetMetadata() {
-		if md.GetCost() == 0 {
+		if md.GetCost() == 0 && md.GetDateAdded() > 1475280000 {
 			r, _ := syncer.getRelease(int(md.GetId()))
 			inc.Releases = append(inc.Releases, r)
 		}
