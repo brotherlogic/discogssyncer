@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +68,7 @@ func (syncer *Syncer) GetIncompleteReleases(ctx context.Context, in *pb.Empty) (
 	for _, md := range syncer.collection.GetMetadata() {
 		if md.GetCost() == 0 && md.GetDateAdded() > 1475280000 {
 			r, _ := syncer.getRelease(int(md.GetId()))
+			log.Printf("READ %v", r)
 			if r.FolderId != 0 {
 				inc.Releases = append(inc.Releases, r)
 			}

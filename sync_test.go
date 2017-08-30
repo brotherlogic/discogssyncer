@@ -29,7 +29,7 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 
 func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
 	if id == 25 || id == 29 {
-		return pbd.Release{Id: int32(id), MasterId: int32(234)}, nil
+		return pbd.Release{Id: int32(id), MasterId: int32(234), FolderId: 222}, nil
 	} else if id == 32 {
 		return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
 	}
@@ -143,7 +143,7 @@ func TestSearch(t *testing.T) {
 func TestGetUncosted(t *testing.T) {
 	syncer := GetTestSyncer(".testGetUncosted", true)
 	r1 := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 38}
-	r2 := &pbd.Release{FolderId: 25, Id: 27, InstanceId: 39}
+	r2 := &pbd.Release{FolderId: 25, Id: 29, InstanceId: 39}
 	m1 := &pb.ReleaseMetadata{Cost: 200}
 
 	syncer.saveRelease(r1, 23)
@@ -156,7 +156,7 @@ func TestGetUncosted(t *testing.T) {
 	}
 
 	log.Printf("WHAT = %v", releases.Releases == nil)
-	if releases.Releases == nil || len(releases.Releases) != 1 || releases.Releases[0].Id != 27 {
+	if releases.Releases == nil || len(releases.Releases) != 1 || releases.Releases[0].Id != 29 {
 		t.Errorf("Error getting incomplete releases: %v", releases)
 	}
 }
