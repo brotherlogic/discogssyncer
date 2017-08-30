@@ -140,6 +140,27 @@ func TestSearch(t *testing.T) {
 	}
 }
 
+func TestGetUncosted(t *testing.T) {
+	syncer := GetTestSyncer(".testGetUncosted", true)
+	r1 := &pbd.Release{FolderId: 23, Id: 25, InstanceId: 38}
+	r2 := &pbd.Release{FolderId: 25, Id: 27, InstanceId: 39}
+	m1 := &pb.ReleaseMetadata{Cost: 200}
+
+	syncer.saveRelease(r1, 23)
+	syncer.saveRelease(r2, 25)
+	syncer.UpdateMetadata(context.Background(), &pb.MetadataUpdate{Release: r1, Update: m1})
+
+	releases, err := syncer.GetIncompleteReleases(context.Background(), &pb.Empty{})
+	if err != nil {
+		t.Fatalf("Error getting incompletes: %v", err)
+	}
+
+	log.Printf("WHAT = %v", releases.Releases == nil)
+	if releases.Releases == nil || len(releases.Releases) != 1 || releases.Releases[0].Id != 27 {
+		t.Errorf("Error getting incomplete releases: %v", releases)
+	}
+}
+
 func TestGetMetadata(t *testing.T) {
 	sTime := time.Now().Unix()
 	syncer := GetTestSyncer(".testGetMetadata", true)

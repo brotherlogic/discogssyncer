@@ -39,12 +39,10 @@ const (
 
 // This is the only method that interacts with disk
 func (s *Syncer) readRecordCollection() error {
-	log.Printf("Reading collection")
 	collection := &pb.RecordCollection{}
 	data, err := s.KSclient.Read(KEY, collection)
 
 	if err != nil {
-		log.Printf("Unable to read collection: %v", err)
 		return err
 	}
 
@@ -62,7 +60,6 @@ func (s *Syncer) readRecordCollection() error {
 
 func (s *Syncer) saveCollection() {
 	t := time.Now()
-	log.Printf("Writing collection")
 	s.KSclient.Save(KEY, s.collection)
 	s.LogFunction("saveCollection", t)
 }
@@ -106,12 +103,9 @@ func findServer(name string) (string, int) {
 
 	for _, r := range rs.Services {
 		if r.Name == name {
-			log.Printf("%v -> %v", name, r)
 			return r.Ip, int(r.Port)
 		}
 	}
-
-	log.Printf("No %v running", name)
 
 	return "", -1
 }
@@ -169,8 +163,6 @@ func main() {
 	syncer.Register = syncer
 	syncer.PrepServer()
 	syncer.RegisterServer("discogssyncer", false)
-
-	log.Printf("PRESERVER %v", len(syncer.collection.Folders))
 
 	syncer.Serve()
 }

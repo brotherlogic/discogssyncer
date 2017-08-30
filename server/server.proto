@@ -121,4 +121,6 @@ service DiscogsService {
 				rpc DeleteInstance(godiscogs.Release) returns (Empty) {};
 
 				rpc Sell(godiscogs.Release) returns (Empty) {};
+
+				rpc GetIncompleteReleases(Empty) returns (ReleaseList) {};
 }
