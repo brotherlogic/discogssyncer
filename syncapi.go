@@ -48,6 +48,14 @@ func (s *Syncer) readRecordCollection() error {
 
 	s.collection = data.(*pb.RecordCollection)
 
+	//Ensure we don't keep metadata for release id = 0
+	removed := 0
+	for i, m := range s.collection.GetMetadata() {
+		if m.Id == 0 {
+			s.collection.Metadata = append(s.collection.Metadata[:(i-removed)], s.collection.Metadata[(i-removed)+1:]...)
+		}
+	}
+
 	// Build out the release map
 	for _, f := range s.collection.Folders {
 		for _, r := range f.Releases.Releases {
