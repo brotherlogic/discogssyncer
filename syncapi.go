@@ -127,6 +127,7 @@ func main() {
 	}
 
 	syncer := InitServer()
+	syncer.PrepServer()
 
 	if len(*token) > 0 {
 		syncer.KSclient.Save(TOKEN, &pb.Token{Token: *token})
@@ -144,7 +145,6 @@ func main() {
 	syncer.token = sToken
 
 	syncer.Register = syncer
-	syncer.PrepServer()
 	syncer.RegisterServer("discogssyncer", false)
 
 	syncer.Serve()
