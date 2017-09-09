@@ -463,9 +463,13 @@ func TestAddToFolder(t *testing.T) {
 		t.Errorf("Move to uncat has returned error")
 	}
 
-	newRelease, _ := syncer.GetRelease(25, 20)
+	newRelease, meta := syncer.GetRelease(25, 20)
 	if newRelease == nil || newRelease.FolderId != 20 {
 		t.Errorf("Error in retrieving added release: %v", newRelease)
+	}
+
+	if meta.GetDateAdded() == 0 {
+		t.Errorf("Metadata has not been pulled: %v", meta)
 	}
 }
 
