@@ -96,6 +96,7 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 // InitServer builds an initial server
 func InitServer() Syncer {
 	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release)}
+	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()
 	if err != nil {
@@ -127,7 +128,6 @@ func main() {
 	}
 
 	syncer := InitServer()
-	syncer.PrepServer()
 
 	if len(*token) > 0 {
 		syncer.KSclient.Save(TOKEN, &pb.Token{Token: *token})
