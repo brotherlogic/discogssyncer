@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -12,7 +11,6 @@ import (
 	"google.golang.org/grpc"
 
 	pb "github.com/brotherlogic/discogssyncer/server"
-	pbdi "github.com/brotherlogic/discovery/proto"
 	pbd "github.com/brotherlogic/godiscogs"
 )
 
@@ -95,33 +93,10 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 	pb.RegisterDiscogsServiceServer(server, &s)
 }
 
-func findServer(name string) (string, int) {
-	conn, err := grpc.Dial("192.168.86.64:50055", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Cannot reach discover server: %v (trying to discover %v)", err, name)
-	}
-	defer conn.Close()
-
-	registry := pbdi.NewDiscoveryServiceClient(conn)
-	rs, err := registry.ListAllServices(context.Background(), &pbdi.Empty{})
-
-	if err != nil {
-		log.Fatalf("Failure to list: %v", err)
-	}
-
-	for _, r := range rs.Services {
-		if r.Name == name {
-			return r.Ip, int(r.Port)
-		}
-	}
-
-	return "", -1
-}
-
 // InitServer builds an initial server
 func InitServer() Syncer {
 	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release)}
-	syncer.GoServer.KSclient = *keystoreclient.GetClient(findServer)
+	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()
 	if err != nil {
 		log.Fatalf("Unable to read record collection")
