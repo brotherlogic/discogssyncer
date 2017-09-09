@@ -398,6 +398,7 @@ func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
 	fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, in.NewFolderId)
+	syncer.saveCollection()
 	return &pb.Empty{}, nil
 }
 
