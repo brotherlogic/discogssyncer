@@ -16,6 +16,20 @@ import (
 	pbd "github.com/brotherlogic/godiscogs"
 )
 
+func (syncer *Syncer) resync() {
+	log.Printf("RECACHE: %v", syncer.recacheList)
+	for key, val := range syncer.recacheList {
+		dets, err := syncer.retr.GetRelease(int(val.Id))
+		if err == nil {
+			log.Printf("%v", val)
+			log.Printf("%v", dets)
+			proto.Merge(val, &dets)
+		}
+		delete(syncer.recacheList, key)
+		return
+	}
+}
+
 // GetRelease Gets the release and metadata for the release
 func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.ReleaseMetadata) {
 	var release *pbd.Release
@@ -42,6 +56,11 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 		}
 	}
 	syncer.LogFunction("GetRelease-GetMetadata", t)
+
+	//Recache the release if it's old
+	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() {
+		syncer.recacheList[int(release.Id)] = release
+	}
 
 	return release, metadata
 }
