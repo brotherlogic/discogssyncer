@@ -17,10 +17,11 @@ import (
 // Syncer the configuration for the syncer
 type Syncer struct {
 	*goserver.GoServer
-	token      string
-	retr       saver
-	collection *pb.RecordCollection
-	rMap       map[int]*pbd.Release
+	token       string
+	retr        saver
+	collection  *pb.RecordCollection
+	rMap        map[int]*pbd.Release
+	recacheList map[int]*pbd.Release
 }
 
 var (
@@ -64,6 +65,13 @@ func (s *Syncer) readRecordCollection() error {
 	return nil
 }
 
+func (s *Syncer) recacheLoop() {
+	for true {
+		time.Sleep(time.Minute)
+		s.resync()
+	}
+}
+
 func (s *Syncer) saveCollection() {
 	t := time.Now()
 	s.KSclient.Save(KEY, s.collection)
@@ -95,7 +103,7 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 
 // InitServer builds an initial server
 func InitServer() Syncer {
-	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release)}
+	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), recacheList: make(map[int]*pbd.Release)}
 	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()
@@ -143,6 +151,7 @@ func main() {
 	sToken := tResp.(*pb.Token).Token
 	syncer.retr = pbd.NewDiscogsRetriever(sToken)
 	syncer.token = sToken
+	syncer.RegisterServingTask(syncer.recacheLoop)
 
 	syncer.Register = syncer
 	syncer.RegisterServer("discogssyncer", false)

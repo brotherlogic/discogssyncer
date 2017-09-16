@@ -15,7 +15,9 @@ import (
 	"github.com/brotherlogic/goserver"
 )
 
-type testDiscogsRetriever struct{}
+type testDiscogsRetriever struct {
+	count bool
+}
 
 func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	var releases = make([]pbd.Release, 0)
@@ -27,11 +29,17 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 	return releases
 }
 
-func (testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
+func (t testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
+	log.Printf("ERE: %v", t.count)
 	if id == 25 || id == 29 {
 		return pbd.Release{Id: int32(id), MasterId: int32(234), FolderId: 222}, nil
 	} else if id == 32 {
 		return pbd.Release{Id: int32(id), MasterId: int32(245)}, nil
+	} else if id == 30 {
+		if !t.count {
+			return pbd.Release{Id: int32(30), MasterId: int32(245)}, nil
+		}
+		return pbd.Release{Id: int32(30), MasterId: int32(250)}, nil
 	}
 
 	if id == 250 {
@@ -90,6 +98,23 @@ func TestSellRecord(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Failure to sell record")
+	}
+}
+
+func TestRecache(t *testing.T) {
+	syncer := GetTestSyncer(".testRecache", true)
+	syncer.AddToFolder(context.Background(), &pb.ReleaseMove{Release: &pbd.Release{Id: 30}, NewFolderId: 26})
+
+	rel, _ := syncer.GetRelease(30, 26)
+	if rel.MasterId != 245 {
+		t.Fatalf("Details have already been pulled: %v", rel)
+	}
+	syncer.retr = &testDiscogsRetriever{count: true}
+	syncer.resync()
+
+	rel, _ = syncer.GetRelease(30, 26)
+	if rel.MasterId != 250 {
+		t.Errorf("Details have not been updated: %v", rel)
 	}
 }
 
@@ -681,9 +706,10 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 
 func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer := Syncer{
-		retr:       testDiscogsRetriever{},
-		collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
-		rMap:       make(map[int]*pbd.Release),
+		retr:        testDiscogsRetriever{},
+		collection:  &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
+		rMap:        make(map[int]*pbd.Release),
+		recacheList: make(map[int]*pbd.Release),
 	}
 
 	if delete {
