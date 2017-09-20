@@ -17,6 +17,7 @@ import (
 )
 
 func (syncer *Syncer) resync() {
+	t := time.Now()
 	log.Printf("RECACHE: %v", syncer.recacheList)
 	for key, val := range syncer.recacheList {
 		dets, err := syncer.retr.GetRelease(int(val.Id))
@@ -26,8 +27,10 @@ func (syncer *Syncer) resync() {
 			proto.Merge(val, &dets)
 		}
 		delete(syncer.recacheList, key)
+		syncer.LogFunction("resync-recached", t)
 		return
 	}
+	syncer.LogFunction("resync-none", t)
 }
 
 // GetRelease Gets the release and metadata for the release
