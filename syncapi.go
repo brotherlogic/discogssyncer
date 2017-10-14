@@ -119,7 +119,8 @@ func InitServer() Syncer {
 
 // Mote promotes/demotes this server
 func (s Syncer) Mote(master bool) error {
-	return nil
+	err := s.readRecordCollection()
+	return err
 }
 
 // ReportHealth alerts if we're not healthy
