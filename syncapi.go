@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/brotherlogic/goserver"
@@ -22,6 +23,7 @@ type Syncer struct {
 	collection  *pb.RecordCollection
 	rMap        map[int]*pbd.Release
 	recacheList map[int]*pbd.Release
+	mapM        *sync.Mutex
 }
 
 var (
@@ -110,6 +112,7 @@ func InitServer() Syncer {
 	if err != nil {
 		log.Fatalf("Unable to read record collection")
 	}
+	syncer.mapM = &sync.Mutex{}
 
 	return syncer
 }

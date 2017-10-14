@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -98,6 +99,18 @@ func TestSellRecord(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Failure to sell record")
+	}
+}
+
+func TestEmptyRecache(t *testing.T) {
+	syncer := GetTestSyncer(".testRecache", true)
+
+	syncer.retr = &testDiscogsRetriever{count: true}
+	syncer.resync()
+
+	rel, err := syncer.GetRelease(30, 26)
+	if err != nil {
+		t.Errorf("Something weird happened: %v", rel)
 	}
 }
 
@@ -722,6 +735,7 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 	syncer.GoServer.KSclient = *keystoreclient.GetTestClient(foldername)
 
 	syncer.readRecordCollection()
+	syncer.mapM = &sync.Mutex{}
 
 	return syncer
 }
