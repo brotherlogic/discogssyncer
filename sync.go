@@ -17,6 +17,7 @@ import (
 )
 
 func (syncer *Syncer) resync() {
+	syncer.mapM.Lock()
 	t := time.Now()
 	log.Printf("RECACHE: %v", syncer.recacheList)
 	for key, val := range syncer.recacheList {
@@ -28,8 +29,10 @@ func (syncer *Syncer) resync() {
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
+		syncer.mapM.Unlock()
 		return
 	}
+	syncer.mapM.Unlock()
 	syncer.LogFunction("resync-none", t)
 }
 
@@ -38,7 +41,9 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 	var release *pbd.Release
 	var metadata *pb.ReleaseMetadata
 	t := time.Now()
+	syncer.mapM.Lock()
 	release = syncer.rMap[int(id)]
+	syncer.mapM.Unlock()
 	if release == nil || release.FolderId != folder {
 		for _, f := range syncer.collection.Folders {
 			if f.Folder.Id == folder {
