@@ -555,7 +555,7 @@ func (syncer *Syncer) Sell(ctx context.Context, in *pbd.Release) (*pb.Empty, err
 
 //SyncWithDiscogs Syncs everything with discogs
 func (syncer *Syncer) SyncWithDiscogs(ctx context.Context, in *pb.Empty) (*pb.Empty, error) {
-	t = time.Now()
+	t := time.Now()
 	syncer.SaveCollection()
 	syncer.SyncWantlist()
 	syncer.LogFunction("SyncWithDiscogs", t)
