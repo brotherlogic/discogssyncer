@@ -110,6 +110,11 @@ func (syncer *Syncer) GetIncompleteReleases(ctx context.Context, in *pb.Empty) (
 
 // MoveToFolder moves a release to the specified folder
 func (syncer *Syncer) MoveToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
+	//Validate request
+	if in.Release == nil {
+		return nil, errors.New("Request to move with nil release?")
+	}
+
 	//Before doing anything check that the new folder exists
 	legit := false
 	for _, f := range syncer.getFolders().Folders {
