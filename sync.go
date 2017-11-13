@@ -40,7 +40,6 @@ func (syncer *Syncer) resync() {
 func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.ReleaseMetadata) {
 	var release *pbd.Release
 	var metadata *pb.ReleaseMetadata
-	t := time.Now()
 	syncer.mapM.Lock()
 	release = syncer.rMap[int(id)]
 	syncer.mapM.Unlock()
@@ -55,15 +54,12 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 			}
 		}
 	}
-	syncer.LogFunction("GetRelease-GetRelease", t)
 
-	t = time.Now()
 	for _, m := range syncer.collection.Metadata {
 		if m.Id == id {
 			metadata = m
 		}
 	}
-	syncer.LogFunction("GetRelease-GetMetadata", t)
 
 	//Recache the release if it's old
 	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() {
@@ -495,7 +491,7 @@ func (syncer *Syncer) GetMetadata(ctx context.Context, in *pbd.Release) (*pb.Rel
 }
 
 // GetReleasesInFolder serves up the releases in a given folder
-func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.ReleaseList, error) {
+func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList) (*pb.RecordList, error) {
 	t := time.Now()
 	releases := pb.ReleaseList{}
 	for _, folderSpec := range in.Folders {
@@ -508,8 +504,16 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 		}
 	}
 
+	//Append everything together mit the metadata
+	records := &pb.RecordList{}
+	for _, r := range releases.Releases {
+		log.Printf("GETTTING METADATA: %v", r)
+		metadata, _ := syncer.GetMetadata(ctx, r)
+		records.Records = append(records.Records, &pb.Record{Release: r, Metadata: metadata})
+	}
+
 	syncer.LogFunction("GetReleasesInFolder", t)
-	return &releases, nil
+	return records, nil
 }
 
 func (syncer *Syncer) getReleases(folderID int32) *pb.ReleaseList {

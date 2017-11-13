@@ -42,6 +42,11 @@ message ReleaseMetadata {
 	int64 last_cache = 7;
 }
 
+message Record {
+	godiscogs.Release release = 1;
+	ReleaseMetadata metadata = 2;
+}
+
 message Empty {}
 
 message FolderList {
@@ -50,6 +55,10 @@ message FolderList {
 
 message ReleaseList {
         repeated godiscogs.Release releases = 1;
+}
+
+message RecordList {
+		repeated Record records = 1;
 }
 
 message ReleaseMove {
@@ -91,7 +100,7 @@ message SearchRequest {
 service DiscogsService {
         rpc GetCollection (Empty) returns (ReleaseList) {};
 
-        rpc GetReleasesInFolder (FolderList) returns (ReleaseList) {};
+        rpc GetReleasesInFolder (FolderList) returns (RecordList) {};
 
         rpc MoveToFolder (ReleaseMove) returns (Empty) {};
 
