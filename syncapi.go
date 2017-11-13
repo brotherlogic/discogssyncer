@@ -13,6 +13,7 @@ import (
 
 	pb "github.com/brotherlogic/discogssyncer/server"
 	pbd "github.com/brotherlogic/godiscogs"
+	pbgs "github.com/brotherlogic/goserver/proto"
 )
 
 // Syncer the configuration for the syncer
@@ -41,7 +42,7 @@ const (
 // This is the only method that interacts with disk
 func (s *Syncer) readRecordCollection() error {
 	collection := &pb.RecordCollection{}
-	data, err := s.KSclient.Read(KEY, collection)
+	data, _, err := s.KSclient.Read(KEY, collection)
 
 	if err != nil {
 		return err
@@ -123,6 +124,11 @@ func (s Syncer) Mote(master bool) error {
 	return err
 }
 
+// GetState gets the state of the server
+func (s Syncer) GetState() []*pbgs.State {
+	return []*pbgs.State{}
+}
+
 // ReportHealth alerts if we're not healthy
 func (s Syncer) ReportHealth() bool {
 	return true
@@ -146,7 +152,7 @@ func main() {
 	}
 
 	tType := &pb.Token{}
-	tResp, err := syncer.KSclient.Read(TOKEN, tType)
+	tResp, _, err := syncer.KSclient.Read(TOKEN, tType)
 
 	if err != nil {
 		log.Fatalf("Unable to read token: %v", err)
