@@ -31,7 +31,6 @@ func (testDiscogsRetriever) GetCollection() []pbd.Release {
 }
 
 func (t testDiscogsRetriever) GetRelease(id int) (pbd.Release, error) {
-	log.Printf("ERE: %v", t.count)
 	if id == 25 || id == 29 {
 		return pbd.Release{Id: int32(id), MasterId: int32(234), FolderId: 222}, nil
 	} else if id == 32 {
@@ -622,7 +621,7 @@ func TestRetrieveEmptyCollection(t *testing.T) {
 	folderList := &pb.FolderList{}
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 	rels, err := syncer.GetReleasesInFolder(context.Background(), folderList)
-	if err == nil && len(rels.Releases) > 0 {
+	if err == nil && len(rels.Records) > 0 {
 		t.Errorf("Pull from empty folder returns no error! or valid releases")
 	}
 }
@@ -754,22 +753,31 @@ func GetTestSyncerNoDelete(foldername string) Syncer {
 	return GetTestSyncer(foldername, false)
 }
 
+func TestEmptyMove(t *testing.T) {
+	syncer := GetTestSyncer(".testEmptyMove", true)
+	_, err := syncer.MoveToFolder(context.Background(), &pb.ReleaseMove{Release: nil})
+	if err == nil {
+		t.Errorf("Bad move has not failed")
+	}
+}
+
 func TestGetFolderById(t *testing.T) {
-	syncer := GetTestSyncerNoDelete(".testgetfolders/")
+	log.Printf("Starting TEST")
+	syncer := GetTestSyncer(".testgetfolders/", true)
 	folders := &pb.FolderList{}
 	folders.Folders = append(folders.Folders, &pbd.Folder{Name: "TestOne", Id: 1234})
 
-	release := &pbd.Release{Id: 1234}
+	release := &pbd.Release{Id: 1234, FolderId: 1234}
 	syncer.saveRelease(release, 1234)
 
 	folderList := &pb.FolderList{}
 	folderList.Folders = append(folderList.Folders, &pbd.Folder{Id: 1234})
-	releases, err := syncer.GetReleasesInFolder(context.Background(), folderList)
+	records, err := syncer.GetReleasesInFolder(context.Background(), folderList)
 	if err != nil {
 		t.Errorf("Failure to get releases: %v", err)
 	}
-	if len(releases.Releases) != 1 {
-		t.Errorf("Bad retrieve of releases: %v", releases)
+	if len(records.Records) != 1 {
+		t.Errorf("Bad retrieve of releases: %v", records)
 	}
 }
 
@@ -861,7 +869,7 @@ func TestGetFolder(t *testing.T) {
 		t.Fatalf("Error in getting releases: %v", err)
 	}
 
-	if len(list.Releases) == 0 {
+	if len(list.Records) == 0 {
 		t.Errorf("No releases returned: %v", list)
 	}
 }
