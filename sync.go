@@ -503,6 +503,7 @@ func (syncer *Syncer) GetReleasesInFolder(ctx context.Context, in *pb.FolderList
 			}
 		}
 	}
+	syncer.LogFunction("GetReleasesInFolder-Build", t)
 
 	//Append everything together mit the metadata
 	records := &pb.RecordList{}
