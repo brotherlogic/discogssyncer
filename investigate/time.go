@@ -58,7 +58,7 @@ func run() {
 		log.Printf("ERROR: %v", err)
 	}
 
-	log.Printf("Found %v in %v", len(res.GetRecords()), time.Now().Sub(s))
+	log.Printf("Found %v in a total of %v", len(res.GetRecords()), time.Now().Sub(s))
 }
 
 func main() {
