@@ -23,6 +23,7 @@ type Syncer struct {
 	retr        saver
 	collection  *pb.RecordCollection
 	rMap        map[int]*pbd.Release
+	mMap        map[int32]*pb.ReleaseMetadata
 	recacheList map[int]*pbd.Release
 	mapM        *sync.Mutex
 }
@@ -106,7 +107,7 @@ func (s Syncer) DoRegister(server *grpc.Server) {
 
 // InitServer builds an initial server
 func InitServer() Syncer {
-	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), recacheList: make(map[int]*pbd.Release)}
+	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release)}
 	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()

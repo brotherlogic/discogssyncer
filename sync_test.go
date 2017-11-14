@@ -721,6 +721,7 @@ func GetTestSyncer(foldername string, delete bool) Syncer {
 		retr:        testDiscogsRetriever{},
 		collection:  &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
 		rMap:        make(map[int]*pbd.Release),
+		mMap:        make(map[int32]*pb.ReleaseMetadata),
 		recacheList: make(map[int]*pbd.Release),
 	}
 
