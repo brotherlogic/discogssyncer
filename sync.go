@@ -23,6 +23,7 @@ func (syncer *Syncer) resync() {
 	syncer.Log(fmt.Sprintf("RECACHE: %v", syncer.recacheList))
 	for key, val := range syncer.recacheList {
 		dets, err := syncer.retr.GetRelease(int(val.Id))
+		dets.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
 		if err == nil {
 			log.Printf("%v", val)
 			log.Printf("%v", dets)
@@ -255,6 +256,7 @@ type saver interface {
 	AddToWantlist(releaseID int)
 	SellRecord(releaseID int, price float32, state string)
 	GetSalePrice(releaseID int) float32
+	GetInstanceID(releaseID int) int32
 }
 
 // EditWant edits a want in the wantlist
