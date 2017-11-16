@@ -19,13 +19,14 @@ import (
 func (syncer *Syncer) resync() {
 	syncer.mapM.Lock()
 	t := time.Now()
-	log.Printf("RECACHE: %v", syncer.recacheList)
+	syncer.Log(fmt.Sprintf("RECACHE: %v", syncer.recacheList))
 	for key, val := range syncer.recacheList {
 		dets, err := syncer.retr.GetRelease(int(val.Id))
 		if err == nil {
 			log.Printf("%v", val)
 			log.Printf("%v", dets)
 			proto.Merge(val, &dets)
+			syncer.Log(fmt.Sprintf("NOW: %v", val))
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
