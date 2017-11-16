@@ -716,8 +716,8 @@ func TestSaveAndRefreshMetadata(t *testing.T) {
 	}
 }
 
-func GetTestSyncer(foldername string, delete bool) Syncer {
-	syncer := Syncer{
+func GetTestSyncer(foldername string, delete bool) *Syncer {
+	syncer := &Syncer{
 		retr:        testDiscogsRetriever{},
 		collection:  &pb.RecordCollection{Wantlist: &pb.Wantlist{}},
 		rMap:        make(map[int]*pbd.Release),
@@ -750,7 +750,7 @@ func TestGetEmptyFolderReleaseGet(t *testing.T) {
 	}
 }
 
-func GetTestSyncerNoDelete(foldername string) Syncer {
+func GetTestSyncerNoDelete(foldername string) *Syncer {
 	return GetTestSyncer(foldername, false)
 }
 

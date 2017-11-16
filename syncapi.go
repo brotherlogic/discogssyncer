@@ -101,13 +101,13 @@ func (s *Syncer) deleteRelease(rel *pbd.Release, folder int32) {
 }
 
 // DoRegister does RPC registration
-func (s Syncer) DoRegister(server *grpc.Server) {
-	pb.RegisterDiscogsServiceServer(server, &s)
+func (s *Syncer) DoRegister(server *grpc.Server) {
+	pb.RegisterDiscogsServiceServer(server, s)
 }
 
 // InitServer builds an initial server
-func InitServer() Syncer {
-	syncer := Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release)}
+func InitServer() *Syncer {
+	syncer := &Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release)}
 	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()
