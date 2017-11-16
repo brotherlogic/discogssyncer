@@ -23,16 +23,17 @@ func (syncer *Syncer) resync() {
 	syncer.Log(fmt.Sprintf("RECACHE: %v", syncer.recacheList))
 	for key, val := range syncer.recacheList {
 		dets, err := syncer.retr.GetRelease(int(val.Id))
-		dets.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
 		if err == nil {
 			log.Printf("%v", val)
 			log.Printf("%v", dets)
 			proto.Merge(val, &dets)
+			val.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
 			syncer.Log(fmt.Sprintf("NOW: %v and %v", val, &dets))
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
 		syncer.mapM.Unlock()
+		syncer.saveCollection()
 		return
 	}
 	syncer.mapM.Unlock()
