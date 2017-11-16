@@ -87,6 +87,10 @@ func (testDiscogsRetriever) GetSalePrice(releaseID int) float32 {
 	return 12.35
 }
 
+func (testDiscogsRetriever) GetInstanceID(releaseID int) int32 {
+	return 0
+}
+
 func (testDiscogsRetriever) SellRecord(releaseID int, price float32, state string) {
 	// Do nothing
 }
