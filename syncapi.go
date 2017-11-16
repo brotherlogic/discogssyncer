@@ -111,10 +111,6 @@ func InitServer() *Syncer {
 	syncer := &Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release), lastResync: time.Now()}
 	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
-	err := syncer.readRecordCollection()
-	if err != nil {
-		log.Fatalf("Unable to read record collection")
-	}
 	syncer.mapM = &sync.Mutex{}
 
 	return syncer
