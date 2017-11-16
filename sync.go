@@ -402,6 +402,8 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 		}
 	}
 
+	syncer.Log("Unable to find release in collection")
+
 	//Let's reach out to discogs and see if this is there
 	frel, err := syncer.retr.GetRelease(int(in.Id))
 	syncer.LogFunction("GetSingleRelease-discogs", t1)
