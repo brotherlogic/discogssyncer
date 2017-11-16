@@ -61,8 +61,8 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 		}
 	}
 
-	//Recache the release if it's old
-	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() {
+	//Recache the release if it's old, or if we don't have an instance id
+	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() || (release != nil && release.InstanceId <= 0) {
 		syncer.mapM.Lock()
 		syncer.recacheList[int(release.Id)] = release
 		syncer.mapM.Unlock()
