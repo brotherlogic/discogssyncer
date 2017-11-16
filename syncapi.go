@@ -26,6 +26,7 @@ type Syncer struct {
 	mMap        map[int32]*pb.ReleaseMetadata
 	recacheList map[int]*pbd.Release
 	mapM        *sync.Mutex
+	lastResync  time.Time
 }
 
 var (
@@ -107,7 +108,7 @@ func (s *Syncer) DoRegister(server *grpc.Server) {
 
 // InitServer builds an initial server
 func InitServer() *Syncer {
-	syncer := &Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release)}
+	syncer := &Syncer{GoServer: &goserver.GoServer{}, collection: &pb.RecordCollection{Wantlist: &pb.Wantlist{}}, rMap: make(map[int]*pbd.Release), mMap: make(map[int32]*pb.ReleaseMetadata), recacheList: make(map[int]*pbd.Release), lastResync: time.Now()}
 	syncer.PrepServer()
 	syncer.GoServer.KSclient = *keystoreclient.GetClient(syncer.GetIP)
 	err := syncer.readRecordCollection()
@@ -126,8 +127,8 @@ func (s Syncer) Mote(master bool) error {
 }
 
 // GetState gets the state of the server
-func (s Syncer) GetState() []*pbgs.State {
-	return []*pbgs.State{}
+func (s *Syncer) GetState() []*pbgs.State {
+	return []*pbgs.State{&pbgs.State{Key: "last_recache", TimeValue: s.lastResync.Unix()}}
 }
 
 // ReportHealth alerts if we're not healthy

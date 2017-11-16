@@ -17,6 +17,7 @@ import (
 )
 
 func (syncer *Syncer) resync() {
+	syncer.lastResync = time.Now()
 	syncer.mapM.Lock()
 	t := time.Now()
 	syncer.Log(fmt.Sprintf("RECACHE: %v", syncer.recacheList))
