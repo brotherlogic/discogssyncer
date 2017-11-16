@@ -396,6 +396,7 @@ func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*p
 		for _, rel := range folder.GetReleases().GetReleases() {
 			if rel.Id == in.Id {
 				syncer.LogFunction("GetSingleRelease-collection", t1)
+				syncer.Log(fmt.Sprintf("AHA %p and %p", rel, syncer.rMap[int(in.Id)]))
 				return rel, nil
 			}
 		}
