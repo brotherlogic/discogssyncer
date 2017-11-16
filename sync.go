@@ -29,7 +29,7 @@ func (syncer *Syncer) resync() {
 			proto.Merge(val, &dets)
 			val.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
 			syncer.Log(fmt.Sprintf("NOW: %v and %v", val, &dets))
-			syncer.Log(fmt.Sprintf("BUT: %v", syncer.rMap[int(val.Id)]))
+			syncer.Log(fmt.Sprintf("BUT: %v and %p", syncer.rMap[int(val.Id)], syncer))
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
@@ -390,6 +390,7 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
+	syncer.Log(fmt.Sprintf("GETTING: %v and %v and %p", in, syncer.rMap[int(in.Id)], syncer))
 	t1 := time.Now()
 	for _, folder := range syncer.collection.GetFolders() {
 		for _, rel := range folder.GetReleases().GetReleases() {
