@@ -29,6 +29,7 @@ func (syncer *Syncer) resync() {
 			proto.Merge(val, &dets)
 			val.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
 			syncer.Log(fmt.Sprintf("NOW: %v and %v", val, &dets))
+			syncer.Log(fmt.Sprintf("BUT: %v", syncer.rMap[int(val.Id)]))
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
