@@ -55,10 +55,10 @@ func run() {
 	client := pbds.NewDiscogsServiceClient(conn)
 	res, err := client.GetReleasesInFolder(context.Background(), &pbds.FolderList{Folders: []*pbd.Folder{&pbd.Folder{Id: 812802}}})
 	if err != nil {
-		log.Printf("ERROR: %v", err)
+		log.Printf("Error in GetReleases: %v", err)
 	}
 
-	log.Printf("Found %v in a total of %v", len(res.GetRecords()), time.Now().Sub(s))
+	log.Printf("Found %v in %v", len(res.GetRecords()), time.Now().Sub(s))
 }
 
 func main() {

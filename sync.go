@@ -17,24 +17,19 @@ import (
 )
 
 func (syncer *Syncer) resync() {
-	syncer.lastResync = time.Now()
 	syncer.mapM.Lock()
 	t := time.Now()
-	syncer.Log(fmt.Sprintf("RECACHE: %v", syncer.recacheList))
+	log.Printf("RECACHE: %v", syncer.recacheList)
 	for key, val := range syncer.recacheList {
 		dets, err := syncer.retr.GetRelease(int(val.Id))
 		if err == nil {
 			log.Printf("%v", val)
 			log.Printf("%v", dets)
 			proto.Merge(val, &dets)
-			val.InstanceId = syncer.retr.GetInstanceID(int(val.Id))
-			syncer.Log(fmt.Sprintf("NOW: %v and %v", val, &dets))
-			syncer.Log(fmt.Sprintf("BUT: %v and %p", syncer.rMap[int(val.Id)], syncer))
 		}
 		delete(syncer.recacheList, key)
 		syncer.LogFunction("resync-recached", t)
 		syncer.mapM.Unlock()
-		syncer.saveCollection()
 		return
 	}
 	syncer.mapM.Unlock()
@@ -66,8 +61,8 @@ func (syncer *Syncer) GetRelease(id int32, folder int32) (*pbd.Release, *pb.Rele
 		}
 	}
 
-	//Recache the release if it's old, or if we don't have an instance id
-	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() || (release != nil && release.InstanceId <= 0) {
+	//Recache the release if it's old
+	if metadata != nil && metadata.LastCache < time.Now().Add(time.Hour*24*14).Unix() {
 		syncer.mapM.Lock()
 		syncer.recacheList[int(release.Id)] = release
 		syncer.mapM.Unlock()
@@ -258,7 +253,6 @@ type saver interface {
 	AddToWantlist(releaseID int)
 	SellRecord(releaseID int, price float32, state string)
 	GetSalePrice(releaseID int) float32
-	GetInstanceID(releaseID int) int32
 }
 
 // EditWant edits a want in the wantlist
@@ -390,19 +384,15 @@ func (syncer *Syncer) getFolders() *pb.FolderList {
 
 // GetSingleRelease gets a single release
 func (syncer *Syncer) GetSingleRelease(ctx context.Context, in *pbd.Release) (*pbd.Release, error) {
-	syncer.Log(fmt.Sprintf("GETTING: %v and %v and %p", in, syncer.rMap[int(in.Id)], syncer))
 	t1 := time.Now()
 	for _, folder := range syncer.collection.GetFolders() {
 		for _, rel := range folder.GetReleases().GetReleases() {
 			if rel.Id == in.Id {
 				syncer.LogFunction("GetSingleRelease-collection", t1)
-				syncer.Log(fmt.Sprintf("AHA %p and %p", rel, syncer.rMap[int(in.Id)]))
 				return rel, nil
 			}
 		}
 	}
-
-	syncer.Log("Unable to find release in collection")
 
 	//Let's reach out to discogs and see if this is there
 	frel, err := syncer.retr.GetRelease(int(in.Id))
@@ -436,7 +426,8 @@ func (syncer *Syncer) RebuildWantlist(ctx context.Context, in *pb.Empty) (*pb.Wa
 func (syncer *Syncer) AddToFolder(ctx context.Context, in *pb.ReleaseMove) (*pb.Empty, error) {
 	syncer.retr.AddToFolder(int(in.NewFolderId), int(in.Release.Id))
 	fullRelease, _ := syncer.retr.GetRelease(int(in.Release.Id))
-	fullRelease.FolderId = int32(in.NewFolderId)
+	syncer.
+		fullRelease.FolderId = int32(in.NewFolderId)
 	syncer.saveRelease(&fullRelease, in.NewFolderId)
 	syncer.saveCollection()
 	return &pb.Empty{}, nil
